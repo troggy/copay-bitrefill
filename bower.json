@@ -1,0 +1,24 @@
+{
+  "name": "copay-bitrefill",
+  "version": "1.0.0",
+  "authors": [
+    "Kosta Korenkov <7r0ggy@gmail.com>"
+  ],
+  "description": "Angular module to add Bitrefill support to Copay wallet",
+  "keywords": [
+    "copay",
+    "bitrefill",
+    "addon"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "international-phone-number": "~0.0.16"
+  }
+}

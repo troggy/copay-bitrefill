@@ -1,0 +1,35 @@
+{
+  "name": "copay-bitrefill",
+  "version": "1.0.0",
+  "description": "Angular module to add Bitrefill support to Copay wallet",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/troggy/copay-bitrefill.git"
+  },
+  "keywords": [
+    "copay",
+    "bitrefill",
+    "addon"
+  ],
+  "author": "Kosta Korenkov <7r0ggy@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/troggy/copay-bitrefill/issues"
+  },
+  "homepage": "https://github.com/troggy/copay-bitrefill#readme",
+  "dependencies": {
+    "bitrefill": "^0.1.1"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^4.0.1",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-contrib-concat": "^0.5.1",
+    "grunt-contrib-copy": "^0.8.2",
+    "grunt-html2js": "^0.3.4"
+  }
+}
