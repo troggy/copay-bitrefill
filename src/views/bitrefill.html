@@ -1,0 +1,48 @@
+<div 
+  class="topbar-container" 
+  ng-include="'views/includes/topbar.html'"
+  ng-init="titleSection='Top up mobile phone'; goBackToState = 'walletHome';">
+</div>
+
+
+<div class="content bitrefill" ng-controller="bitrefillController as bitrefill">
+  <div class="row">
+    <div class="columns">
+      <div class="text-center m20v">
+        <img src="img/bitrefill-logo.png" width="200">
+      </div>
+      <div class="text-center large-12 large-centered columns m20t" >
+        <div>
+          <div class="row collapse">
+            <label for="phone" class="left" >
+              <span translate>Phone number to refill</span>
+            </label>
+          </div>
+          <div class="input">
+            <input class="m0" type="text" id="phone" name="phone"
+                 ng-model="phone" default-country="auto" international-phone-number>
+          </div>
+        </div>
+        <div class="m10t">
+          <div class="row collapse">
+            <label for="email" class="left" >
+              <span translate>Email</span>
+            </label>
+          </div>
+          <div class="input">
+            <input class="m0" type="text" id="email" placeholder="Email to send receipt to" name="email" ng-model="email">
+          </div>
+        </div>
+        
+        <div class="columns">
+          <button type="submit" class="button black round expand"
+            ng-disabled="phone.$invalid" translate>
+            Continue
+          </button>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</div>

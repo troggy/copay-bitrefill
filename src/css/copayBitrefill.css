@@ -1,0 +1,12 @@
+.intl-tel-input {
+  display: block;
+}
+
+.intl-tel-input .country-list,
+.intl-tel-input .selected-flag .arrow {
+  display: none !important;
+}
+/*
+.iti-flag {
+  background-image: url("img/flags.png");
+}*/
