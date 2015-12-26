@@ -20,7 +20,8 @@
           </div>
           <div class="input">
             <input class="m0" type="text" id="phone" name="phone"
-                 ng-model="phone" default-country="auto" international-phone-number>
+                 ng-model="phone" default-country="auto"
+                 skip-util-script-download international-phone-number>
           </div>
         </div>
         <div class="m10t">
@@ -35,7 +36,7 @@
         </div>
         
         <div class="columns">
-          <button type="submit" class="button black round expand"
+          <button class="button black round expand" ng-click="lookupNumber()"
             ng-disabled="phone.$invalid" translate>
             Continue
           </button>

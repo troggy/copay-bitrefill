@@ -9,7 +9,9 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-browserify');
 
   grunt.initConfig({
-    clean: ['./dist/templates.js'],
+    clean: [ 
+      'dist/templates.js'
+    ],
     concat: {
       options: {
       },
