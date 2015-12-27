@@ -25,6 +25,8 @@ var forwardResponse = function(res) {
     if (err) {
       res.status(500).send(err).end();
     } else {
+      body.delivered = true;
+      body.paymentReceived = true;
       res.status(200).send(body).end();
     }  
   };

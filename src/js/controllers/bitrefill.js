@@ -12,6 +12,8 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     
     var lookupNumber = $scope.lookupNumber = function(operator) {
       $scope.error = null;
+      $scope.amount = null;
+      $scope.package = null;
       self.setOngoingProcess(gettext('Looking up operator'));
       bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
         self.setOngoingProcess();
@@ -41,6 +43,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       $scope.error = err;
     };
     
+    $scope.isValid = function() {
+      var validValue = ($scope.package && $scope.package.value) || $scope.amount;
+      return $scope.selectedOp && $scope.email && $scope.phone && validValue;
+    };
+    
     $scope.placeOrder = function() {
       var fc = profileService.focusedClient;
       
@@ -51,7 +58,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
 
         self.setOngoingProcess(gettext('Creating order'));
         bitrefill.placeOrder($scope.phone, $scope.selectedOp.slug,
-           $scope.package.value, $scope.email, refundAddress, function(err, result) {
+           $scope.amount || $scope.package.value, $scope.email, refundAddress, function(err, result) {
 
            if (err) {
              return handleError(err);
