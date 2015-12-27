@@ -50,3 +50,13 @@ ul.bitrefill--package-list li {
   color: black;
   border-radius: 5px;
 }
+
+.bitrefill--btc-value {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.bitrefill--order-field {
+  margin-bottom: 1.5rem;
+}

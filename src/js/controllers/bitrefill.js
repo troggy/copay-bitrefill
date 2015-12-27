@@ -13,6 +13,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     var lookupNumber = $scope.lookupNumber = function(operator) {
       $scope.error = null;
       $scope.amount = null;
+      $scope.btcValueStr = null;
       $scope.package = null;
       self.setOngoingProcess(gettext('Looking up operator'));
       bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
@@ -33,6 +34,14 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         });
         $scope.packages = packages;
       });
+    };
+    
+    $scope.updateBtcValue = function(value, valueSat) {
+      if (!valueSat) {
+        valueSat = value * $scope.selectedOp.range.customerSatoshiPriceRate;
+        valueSat = Math.ceil(valueSat / 10000) * 10000;
+      }
+      $scope.btcValueStr = profileService.formatAmount(valueSat) + ' ' + configWallet.settings.unitName;
     };
     
     var handleError = function(err) {

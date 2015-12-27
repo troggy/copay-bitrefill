@@ -33,7 +33,7 @@
     <form name="orderForm">
     
     <div class="large-12 columns m20t" >
-      <div>
+      <div class="bitrefill--order-field">
         <div class="row collapse">
           <label for="phone" class="left" >
             <span translate>Phone number to refill</span>
@@ -64,7 +64,7 @@
         </button>
       </div>
       
-      <div ng-show="selectedOp" class="m10t">
+      <div ng-show="selectedOp" class="m10t bitrefill--order-field">
           <div class="row collapse">
             <label for="operator" class="left" >
               <span translate>Operator</span>
@@ -85,14 +85,13 @@
           <label><span translate>Amount</span>
             <select class="m10t" ng-model="package"
               ng-options="package as package.valueStr for package in packages"
-              ng-change="selectPackage()" required>
+              ng-change="updateBtcValue(package.value, package.satoshiPrice)" required>
               <option value="">Select package...</option>
             </select>
           </label>
-          <div ng-show="package" class="">{{ package.btcValueStr }}</div>
       </div>
       
-      <div ng-show="selectedOp && selectedOp.isRanged" class="m10t">
+      <div ng-show="selectedOp && selectedOp.isRanged" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="amount" class="left" >
             <span translate>Amount</span>
@@ -114,11 +113,12 @@
                  min="{{selectedOp.range.min}}"
                  max="{{selectedOp.range.max}}"
                  step="{{selectedOp.range.step}}"
+                 ng-change="updateBtcValue(amount)"
                  name="amount" ng-model="amount" required>
         </div>
       </div>
       
-      <div ng-show="selectedOp" class="m10t">
+      <div ng-show="selectedOp" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="email" class="left" >
             <span translate>Email</span>
@@ -139,6 +139,8 @@
                  name="email" ng-model="email" required>
         </div>
       </div>
+      
+      <div ng-show="btcValueStr" class="bitrefill--btc-value"><span translate>You will pay</span> <strong>{{ btcValueStr }}</strong></div>
       
       <div class="columns" ng-show="selectedOp">
         <button class="button black round expand" ng-disabled="!isValid() || loading" 
