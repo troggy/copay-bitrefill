@@ -30,33 +30,45 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       });
     };
     
+    var handleError = function(err) {
+      $log.error(err);
+      
+      profileService.lockFC();
+      self.setOngoingProcess();
+      $scope.error = err;
+    };
+    
     $scope.placeOrder = function() {
+      var fc = profileService.focusedClient;
+      
+      addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
+        if (!refundAddress) {
+          return handleError(bwsError.msg(err, 'Could not create address'));
+        }
+
         self.setOngoingProcess(gettext('Creating order'));
         bitrefill.place_order($scope.phone, $scope.selectedOp.slug,
-           $scope.package.value, $scope.email, function(err, result) {
+           $scope.package.value, $scope.email, refundAddress, function(err, result) {
 
-         if (err) {
-           return;
-         }
-         
-         console.log(result);
-         var txOpts = {
-           toAddress: result.payment.address,
-           amount: result.satoshiPrice,
-           customData: { bitrefillOrderId: result.orderId },
-           message: 'Refill ' + result.number ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency;
-         }
-         self.createTx(txOpts, function(err, result) {
            if (err) {
-             $log.error(err);
-             
-             profileService.lockFC();
-             self.setOngoingProcess();
-             $scope.error = err;
-             return;
+             return handleError(err);
            }
+         
            console.log(result);
-         })
+           $scope.error = null;
+           var txOpts = {
+             toAddress: result.payment.address,
+             amount: result.satoshiPrice,
+             customData: { bitrefillOrderId: result.orderId },
+             message: 'Refill ' + result.number + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
+           }
+           self.createAndSendTx(txOpts, function(err, result) {
+             if (err) {
+               return handleError(err);
+             }
+             console.log(result);
+           })
+         });
        });
     };
     
@@ -123,60 +135,53 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       };
     };
     
-    this.createTx = function(txOpts, cb) {
+    this.createAndSendTx = function(txOpts, cb) {
       var self = this,
           fc = profileService.focusedClient,
           currentSpendUnconfirmed = configWallet.spendUnconfirmed;
       
-      $scope.error = null;
-          
       if (fc.isPrivKeyEncrypted()) {
         profileService.unlockFC(function(err) {
           if (err) return cb(err);
-          return self.createTx(txOpts, cb);
+          return self.createAndSendTx(txOpts, cb);
         });
         return;
       };
 
       self.setOngoingProcess(gettext('Creating transaction'));
       $timeout(function() {
-        addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
-          if (!refundAddress) {
-            return cb(bwsError.msg(err, 'Could not create address'));
-          }
-          feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
-            fc.sendTxProposal({
-              toAddress: refundAddress , // txOpts.toAddress,
-              amount: txOpts.amount,
-              message: txOpts.message,
-              customData: txOpts.customData,
-              payProUrl: null,
-              feePerKb: feePerKb,
-              excludeUnconfirmedUtxos: currentSpendUnconfirmed ? false : true
-            }, function(err, txp) {
-              if (err) {
-                return cb(bwsError.msg(err, 'Error'));
-              }
+        feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
+          fc.sendTxProposal({
+            toAddress: 'mgUKqoerzxsaUVtbrYWsh4FxxZDwwywaK5' , // txOpts.toAddress,
+            amount: txOpts.amount,
+            message: txOpts.message,
+            customData: txOpts.customData,
+            payProUrl: null,
+            feePerKb: feePerKb,
+            excludeUnconfirmedUtxos: currentSpendUnconfirmed ? false : true
+          }, function(err, txp) {
+            if (err) {
+              return cb(bwsError.msg(err, 'Error'));
+            }
 
-              if (!fc.canSign()) {
-                self.setOngoingProcess();
-                $log.info('No signing proposal: No private key');
-                return cb(null, { complete: false });
+            if (!fc.canSign()) {
+              self.setOngoingProcess();
+              $log.info('No signing proposal: No private key');
+              return cb(null, { complete: false });
+            }
+            
+            _signAndBroadcast(txp, function(err) {
+              self.setOngoingProcess();
+              if (err) {
+                var errorMessage = err.message ? err.message : gettext('The payment was created but could not be completed. Please try again from home screen');
+                $scope.$emit('Local/TxProposalAction');
+                $timeout(function() {
+                  $scope.$digest();
+                }, 1);
+                return cb(errorMessage);
+              } else {
+                return cb(null, { complete: true })
               }
-              
-              _signAndBroadcast(txp, function(err) {
-                self.setOngoingProcess();
-                if (err) {
-                  var errorMessage = err.message ? err.message : gettext('The payment was created but could not be completed. Please try again from home screen');
-                  $scope.$emit('Local/TxProposalAction');
-                  $timeout(function() {
-                    $scope.$digest();
-                  }, 1);
-                  return cb(errorMessage);
-                } else {
-                  return cb(null, { complete: true })
-                }
-              });
             });
           });
         });

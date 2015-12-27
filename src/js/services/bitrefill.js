@@ -56,7 +56,7 @@ angular.module('copayAddon.bitrefill')
       request(params, cb);
     };
 
-    root.place_order = function(number, operator, pack, email, cb) {
+    root.place_order = function(number, operator, pack, email, refundAddress, cb) {
       var params = {
         method: "POST",
         url: baseUrl + "/order",
@@ -64,7 +64,8 @@ angular.module('copayAddon.bitrefill')
           number: number,
           valuePackage: pack,
           operatorSlug: operator,
-          email: email
+          email: email,
+          refund_btc_address: refundAddress 
         }
       };
       
