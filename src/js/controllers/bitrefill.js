@@ -48,6 +48,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
     
     $scope.updateBtcValue = function(value, valueSat) {
+      if (!value) {
+          $scope.btcValueStr = null;
+          return;
+      }
+      
       if (!valueSat) {
         valueSat = value * $scope.selectedOp.range.customerSatoshiPriceRate;
         valueSat = Math.ceil(valueSat / 10000) * 10000;
