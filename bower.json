@@ -19,6 +19,7 @@
     "tests"
   ],
   "dependencies": {
-    "international-phone-number": "~0.0.16"
+    "international-phone-number": "~0.0.16",
+    "ngBitrefill": "~1.0.0"
   }
 }
