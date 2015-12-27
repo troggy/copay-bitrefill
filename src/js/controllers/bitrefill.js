@@ -40,7 +40,13 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
          }
          
          console.log(result);
-         self.createTx(result.payment.address, result.satoshiPrice, result.orderId, function(err, result) {
+         var txOpts = {
+           toAddress: result.payment.address,
+           amount: result.satoshiPrice,
+           customData: { bitrefillOrderId: result.orderId },
+           message: 'Refill ' + result.number ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency;
+         }
+         self.createTx(txOpts, function(err, result) {
            if (err) {
              $log.error(err);
              
@@ -117,7 +123,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       };
     };
     
-    this.createTx = function(paymentAddress, amountSat, orderId, cb) {
+    this.createTx = function(txOpts, cb) {
       var self = this,
           fc = profileService.focusedClient,
           currentSpendUnconfirmed = configWallet.spendUnconfirmed;
@@ -127,12 +133,12 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       if (fc.isPrivKeyEncrypted()) {
         profileService.unlockFC(function(err) {
           if (err) return cb(err);
-          return self.createTx(paymentAddress, amountSat, orderId, cb);
+          return self.createTx(txOpts, cb);
         });
         return;
       };
 
-      self.setOngoingProcess(gettext('Creating top up transaction'));
+      self.setOngoingProcess(gettext('Creating transaction'));
       $timeout(function() {
         addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
           if (!refundAddress) {
@@ -140,10 +146,10 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
           }
           feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
             fc.sendTxProposal({
-              toAddress: refundAddress,
-              amount: amountSat,
-              message: 'Bitrefill transaction',
-              customData: { bitrefillOrderId: orderId },
+              toAddress: refundAddress , // txOpts.toAddress,
+              amount: txOpts.amount,
+              message: txOpts.message,
+              customData: txOpts.customData,
               payProUrl: null,
               feePerKb: feePerKb,
               excludeUnconfirmedUtxos: currentSpendUnconfirmed ? false : true
