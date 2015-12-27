@@ -2,11 +2,18 @@
 
 var module = angular.module('copayAddon.bitrefill', [
   'internationalPhoneNumber',
+  'ngBitrefill',
   'copayBitrefill.views'
 ]);
 
 module
-    .config(function ($stateProvider) {
+    .config(function (bitrefillProvider, $stateProvider) {
+      
+      bitrefillProvider.setCredentials(
+        '71O95FNWO433KELENKA1VL4FS',
+        'Tombd6r5Ye2AAsLN6BmbQf6ttTIkobSsN4zpdifx6Vg'
+      );
+      
       $stateProvider.state('bitrefill', {
         url: '/bitrefill',
         walletShouldBeComplete: true,
