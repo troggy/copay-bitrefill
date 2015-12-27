@@ -3,7 +3,7 @@
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, feeService, addressService, bwsError, isCordova,
-           gettext, lodash, bitrefill) {
+           gettext, refillStatus, lodash, bitrefill) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = configWallet.settings.feeLevel || 'normal'
@@ -59,7 +59,10 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            var txOpts = {
              toAddress: result.payment.address,
              amount: result.satoshiPrice,
-             customData: { bitrefillOrderId: result.orderId },
+             customData: { 
+               bitrefillOrderId: result.orderId,
+               description: result.valuePackage + ' ' + $scope.selectedOp.currency + ' to ' + result.number
+             },
              message: 'Refill ' + result.number + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
            }
            self.createAndSendTx(txOpts, function(err, result) {
@@ -223,22 +226,22 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
           fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
             self.setOngoingProcess();
             if (err) {
-              err.message = bwsError.msg(err, gettextCatalog.getString('The payment was signed but could not be broadcasted. Please try again from home screen'));
+              err = bwsError.msg(err, gettextCatalog.getString('The payment was signed but could not be broadcasted. Please try again from home screen'));
               return cb(err);
             }
             if (memo)
               $log.info(memo);
 
-            txStatus.notify(btx, function() {
+            refillStatus.notify(btx, function() {
               $scope.$emit('Local/TxProposalAction', true);
-              return cb();
+              return cb(null, btx);
             });
           });
         } else {
           self.setOngoingProcess();
-          txStatus.notify(signedTx, function() {
+          refillStatus.notify(signedTx, function() {
             $scope.$emit('Local/TxProposalAction');
-            return cb();
+            return cb(null, signedTx);
           });
         }
       });
