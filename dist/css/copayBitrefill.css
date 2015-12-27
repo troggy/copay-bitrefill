@@ -1,0 +1,62 @@
+.intl-tel-input {
+  display: block;
+}
+
+.intl-tel-input .country-list,
+.intl-tel-input .selected-flag .arrow {
+  display: none !important;
+}
+/*
+.iti-flag {
+  background-image: url("img/flags.png");
+}*/
+
+.intl-tel-input input,
+.intl-tel-input input[type=text],
+.intl-tel-input input[type=tel] {
+  padding-left: 44px !important;
+}
+
+.bitrefill--logo {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.bitrefill--selectedOp {
+  text-align: left;
+}
+
+ul.bitrefill--operator-list li,
+ul.bitrefill--package-list li {
+  padding: 13px 20px;
+  border-bottom: 1px solid #E9E9EC;
+}
+
+.bitrefill--operator-item {
+  line-height: 1.5;
+  list-style: none;
+  padding: 5px 0;
+}
+
+.bitrefill--operator-item img {
+  margin-right: 5px;
+  width: 50px;
+}
+
+.bitrefill--pin-code {
+  background-color: white;
+  margin: 0 40px;
+  padding: 10px;
+  color: black;
+  border-radius: 5px;
+}
+
+.bitrefill--btc-value {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.bitrefill--order-field {
+  margin-bottom: 1.5rem;
+}
