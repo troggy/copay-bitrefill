@@ -24,6 +24,7 @@
   "homepage": "https://github.com/troggy/copay-bitrefill#readme",
   "dependencies": {
     "bitrefill": "troggy/bitrefill_nodejs#custom-request",
+    "body-parser": "^1.14.2",
     "express": "^4.13.3"
   },
   "devDependencies": {

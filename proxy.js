@@ -1,7 +1,10 @@
 var fs = require('fs'),
-    express = require('express');
+    express = require('express'),
+    bodyParser = require('body-parser');
 
 var app = express();
+
+app.use(bodyParser.json());
   
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
@@ -27,16 +30,17 @@ app.get('/lookup_number', function(req, res) {
     }
   });
 });
-/*
-app.get('/place_order', function(req, res) {
-  bitrefill.place_order(req.params.number, req.params.operatorSlug, undefined, function(err, body) {
+
+app.post('/order', function(req, res) {
+  bitrefill.place_order(req.body.number, req.body.operatorSlug,
+     req.body.valuePackage, req.body.email, function(err, body) {
     if (err) {
       res.status(500).send(err).end();
     } else {
       res.status(200).send(body).end();
     }
   });
-})*/
+})
 
 app.listen(8000);
 
