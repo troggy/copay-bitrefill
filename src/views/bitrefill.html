@@ -6,44 +6,102 @@
 
 
 <div class="content bitrefill" ng-controller="bitrefillController as bitrefill">
-  <div class="row">
-    <div class="columns">
-      <div class="text-center m20v">
-        <img src="img/bitrefill-logo.png" width="200">
-      </div>
-      <div class="text-center large-12 large-centered columns m20t" >
-        <div>
-          <div class="row collapse">
-            <label for="phone" class="left" >
-              <span translate>Phone number to refill</span>
-            </label>
-          </div>
-          <div class="input">
-            <input class="m0" type="text" id="phone" name="phone"
-                 ng-model="phone" default-country="auto"
-                 skip-util-script-download international-phone-number>
-          </div>
+    <div class="bitrefill--logo">
+      <img src="img/bitrefill-logo.png" width="200">
+    </div>
+    
+    <div class="onGoingProcess" ng-show="loading">
+      <div class="onGoingProcess-content" ng-style="{'background-color':index.backgroundColor}">
+        <div class="spinner">
+          <div class="rect1"></div>
+          <div class="rect2"></div>
+          <div class="rect3"></div>
+          <div class="rect4"></div>
+          <div class="rect5"></div>
         </div>
-        <div class="m10t">
-          <div class="row collapse">
-            <label for="email" class="left" >
-              <span translate>Email</span>
-            </label>
-          </div>
-          <div class="input">
-            <input class="m0" type="text" id="email" placeholder="Email to send receipt to" name="email" ng-model="email">
-          </div>
-        </div>
-        
-        <div class="columns">
-          <button class="button black round expand" ng-click="lookupNumber()"
-            ng-disabled="phone.$invalid" translate>
-            Continue
-          </button>
-        </div>
-
-
+        {{ loading|translate }}...
       </div>
     </div>
-  </div>
-</div>
+    
+    <div class="box-notification m20t" ng-show="error" ng-click="resetError()">
+      <span class="text-warning">
+        {{ error|translate }}
+      </span>
+    </div>
+
+
+    <!-- number and email -->
+    
+    <div class="large-12 columns m20t" >
+      <div>
+        <div class="row collapse">
+          <label for="phone" class="left" >
+            <span translate>Phone number to refill</span>
+          </label>
+        </div>
+        <div class="input">
+          <input class="m0" type="text" id="phone" name="phone"
+               ng-model="phone" default-country="auto"
+               ng-disabled="selectedOp"
+               skip-util-script-download international-phone-number>
+        </div>
+      </div>
+      
+      <div class="m20t" ng-hide="selectedOp">
+        <button class="button black round expand" ng-click="lookupNumber()"
+          ng-disabled="loading" translate>
+          Continue
+        </button>
+      </div>
+      
+      <div ng-show="selectedOp" class="m10t">
+          <div class="row collapse">
+            <label for="operator" class="left" >
+              <span translate>Operator</span>
+            </label>
+          </div>
+          <div class="bitrefill--selectedOp" ng-click="openOperatorsModal(operators, selectedOp)">
+            <div class="bitrefill--operator-item">
+              <img src="{{ selectedOp.logoImage }}"/>
+              <span class="bitrefill--operator-name">{{ selectedOp.name }}</span>
+            </div>
+            <small>
+              Wrong telco?
+              <a ng-click="">Select another telco</a>
+            </small>
+          </div>
+      </div>
+      
+      <div ng-show="selectedOp" class="m10t">
+          <label><span translate>Package</span>
+            <select class="m10t" ng-model="package"
+              ng-options="package as package.valueStr for package in packages"
+              ng-change="selectPackage()">
+              <option value="">Select package...</option>
+            </select>
+          </label>
+          <div ng-show="package" class="">{{ package.btcValueStr }}</div>
+      </div>
+      
+      <div ng-show="package" class="m10t">
+        <div class="row collapse">
+          <label for="email" class="left" >
+            <span translate>Email</span><small translate>Receipt will be sent to this email</small>
+          </label>
+        </div>
+        <div class="input">
+          <input class="m0" type="text" id="email" ng-attr-placeholder="{{'Email address'}}"
+                 name="email" ng-model="email">
+        </div>
+      </div>
+      
+      <div class="columns" ng-show="package && email" ng-disabled="loading">
+        <button class="button black round expand" ng-click="placeOrder()" translate>
+          Place order
+        </button>
+      </div>
+
+
+    </div>
+
+</div> <!--/content-->

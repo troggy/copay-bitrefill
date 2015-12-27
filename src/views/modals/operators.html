@@ -1,0 +1,28 @@
+<nav class="tab-bar" ng-style="{'background-color':color}">
+  <section class="left-small">
+    <a ng-click="cancel()">
+      <i class="icon-arrow-left3 icon-back"></i>
+      <span class="text-back" translate>Back</span>
+    </a>
+  </section>
+  <section class="middle tab-bar-section">
+    <h1 class="title ellipsis" translate>
+      Select operator
+    </h1>
+  </section>
+</nav>
+<div class="modal-content fix-modals-touch" 
+     ng-swipe-disable-mouse
+     ng-swipe-right="cancel()">
+
+   <ul class="no-bullet m0 bitrefill--operator-list">
+     <li ng-repeat="op in operators | orderBy: name" class="bitrefill--operator-item" 
+         ng-click="selectOperator(op.slug)">
+       <img ng-src="{{ op.logoImage }}"/>
+       <span class="bitrefill--operator-name">{{ op.name }}</span>
+       <i class="fi-check size-16 right" ng-show="selectedOp.slug == op.slug"></i>
+     </li>
+   </ul>
+
+  <div class="extra-margin-bottom"></div>
+</div>
