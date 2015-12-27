@@ -39,7 +39,7 @@ angular.module('copayAddon.bitrefill')
       request(params, cb);
     };
 
-    root.lookup_number = function(number, operator, cb) {
+    root.lookupNumber = function(number, operator, cb) {
       if (typeof operator == 'function') {
         cb = operator;
         operator = null;
@@ -56,7 +56,7 @@ angular.module('copayAddon.bitrefill')
       request(params, cb);
     };
 
-    root.place_order = function(number, operator, pack, email, refundAddress, cb) {
+    root.placeOrder = function(number, operator, pack, email, refundAddress, cb) {
       var params = {
         method: "POST",
         url: baseUrl + "/order",
@@ -72,10 +72,10 @@ angular.module('copayAddon.bitrefill')
       request(params, cb);
     };
 
-    root.order_status = function(order_id, cb) {
+    root.orderStatus = function(orderId, cb) {
       var params = {
         method: "GET",
-        url: baseUrl + "/order/" + order_id
+        url: baseUrl + "/order/" + orderId
       };
       
       request(params, cb);

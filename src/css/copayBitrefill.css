@@ -42,3 +42,11 @@ ul.bitrefill--package-list li {
   margin-right: 5px;
   width: 50px;
 }
+
+.bitrefill--pin-code {
+  background-color: white;
+  margin: 0 40px;
+  padding: 10px;
+  color: black;
+  border-radius: 5px;
+}

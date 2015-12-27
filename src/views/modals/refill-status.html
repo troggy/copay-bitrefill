@@ -1,13 +1,43 @@
 
 <div ng-if="type == 'broadcasted'" class="popup-txsent text-center">
-  <i class="small-centered columns fi-clock m30tp" ng-style="{'color':color, 'border-color':color}"></i>
-  <div ng-show="tx.amountStr" class="m20t size-36 text-white">
+  <i class="small-centered columns m20tp" 
+    ng-class="{'fi-clock': !delivered && !failed, 'fi-check': delivered,
+     'fi-thumbnails': pinInfo, 'fi-x': failed }"
+    ng-style="{'color':color, 'border-color':color}"></i>
+  <div ng-show="tx.amountStr" ng-hide="delivered || failed || pinInfo" class="m20t size-24 text-white">
+    Waiting for order to complete..
+  </div>
+  <div ng-show="pinInfo" class="m20t size-24 text-white">
+    PIN required
+  </div>
+  
+  <div ng-show="delivered" class="m20t size-24 text-white">
+    Delivered
+  </div>
+  <div ng-show="failed" class="m20t size-24 text-white">
+    Failed
+  </div>
+  
+  <div class="size-16 text-gray" ng-show="pinInfo">
+    <div class="m10t" translate>{{ pinInfo.instructions }}</div>
+    <div class="m10t"><span translate>Your PIN code</span>:</div>
+    <div class="bitrefill--pin-code" translate>{{ pinInfo.pin }}</div>
+    <small translate>{{ pinInfo.other}}</small>
+  </div>
+  
+  <div class="size-16 text-gray" ng-show="delivered" translate>
     {{ tx.customData.description }}
   </div>
-  <div class="size-16 text-gray">
-    <div translate>Payment sent</div>
-    <div translate>Waiting for order to complete..</div>
+
+  <div class="size-16 text-gray" ng-show="failed" translate>
+    {{ failed }}
   </div>
+
+  <div class="size-16 text-gray" ng-hide="delivered || failed || pinInfo">
+    <div translate>Payment sent</div>
+    <div translate>{{ tx.customData.description }}</div>
+  </div>
+  
   <div class="text-center m20t">
     <a class="button outline round light-gray tiny small-4" ng-click="cancel()">OKAY</a>
   </div>

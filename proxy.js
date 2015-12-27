@@ -20,27 +20,29 @@ var bitrefill = Bitrefill({
   "url": "api.bitrefill.com/v1"
 });
 
-app.get('/lookup_number', function(req, res) {
-  console.log(JSON.stringify(req.query, null, 2));
-  bitrefill.lookup_number(req.query.number, req.query.operatorSlug, function(err, body) {
+var forwardResponse = function(res) {
+  return function(err, body) {
     if (err) {
       res.status(500).send(err).end();
     } else {
       res.status(200).send(body).end();
-    }
-  });
+    }  
+  };
+};
+
+app.get('/lookup_number', function(req, res) {
+  console.log(JSON.stringify(req.query, null, 2));
+  bitrefill.lookup_number(req.query.number, req.query.operatorSlug, forwardResponse(res));
 });
 
 app.post('/order', function(req, res) {
   bitrefill.place_order(req.body.number, req.body.operatorSlug,
-     req.body.valuePackage, req.body.email, function(err, body) {
-    if (err) {
-      res.status(500).send(err).end();
-    } else {
-      res.status(200).send(body).end();
-    }
-  });
-})
+     req.body.valuePackage, req.body.email, forwardResponse(res));
+});
+
+app.get('/order/:orderId', function(req, res) {
+  bitrefill.order_status(req.params.orderId, forwardResponse(res));
+});
 
 app.listen(8000);
 
