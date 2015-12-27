@@ -30,7 +30,7 @@
     </div>
 
 
-    <!-- number and email -->
+    <form name="orderForm">
     
     <div class="large-12 columns m20t" >
       <div>
@@ -38,10 +38,20 @@
           <label for="phone" class="left" >
             <span translate>Phone number to refill</span>
           </label>
+          <span ng-hide="orderForm.phone.$pristine">
+            <span class="has-error right size-12" ng-show="orderForm.phone.$invalid">
+              <i class="icon-close-circle size-14"></i>
+              <span class="vm" translate>Not valid</span>
+            </span>
+            <small class="right text-primary" ng-show="!orderForm.phone.$invalid">
+              <i class="icon-checkmark-circle size-14"></i>
+            </small>
+          </span>
         </div>
+
         <div class="input">
           <input class="m0" type="text" id="phone" name="phone"
-               ng-model="phone" default-country="auto"
+               minLength="4" ng-model="phone" default-country="auto" required
                ng-disabled="selectedOp"
                skip-util-script-download international-phone-number>
         </div>
@@ -75,7 +85,7 @@
           <label><span translate>Amount</span>
             <select class="m10t" ng-model="package"
               ng-options="package as package.valueStr for package in packages"
-              ng-change="selectPackage()">
+              ng-change="selectPackage()" required>
               <option value="">Select package...</option>
             </select>
           </label>
@@ -88,6 +98,15 @@
             <span translate>Amount</span>
             <small translate>From {{selectedOp.range.min}} to {{selectedOp.range.max}} {{selectedOp.currency}}</small>
           </label>
+          <span ng-hide="orderForm.amount.$pristine">
+            <span class="has-error right size-12" ng-show="orderForm.amount.$invalid">
+              <i class="icon-close-circle size-14"></i>
+              <span class="vm" translate>Not valid</span>
+            </span>
+            <small class="right text-primary" ng-show="!orderForm.amount.$invalid">
+              <i class="icon-checkmark-circle size-14"></i>
+            </small>
+          </span>
         </div>
         <div class="input">
           <input class="m0" type="number" id="amount"
@@ -95,7 +114,7 @@
                  min="{{selectedOp.range.min}}"
                  max="{{selectedOp.range.max}}"
                  step="{{selectedOp.range.step}}"
-                 name="amount" ng-model="amount">
+                 name="amount" ng-model="amount" required>
         </div>
       </div>
       
@@ -105,10 +124,19 @@
             <span translate>Email</span>
             <small translate>Receipt will be sent to this email</small>
           </label>
+          <span ng-show="orderForm.email.$dirty">
+            <span class="has-error right size-12" ng-show="orderForm.email.$invalid">
+              <i class="icon-close-circle size-14"></i>
+              <span class="vm" translate>Not valid</span>
+            </span>
+            <small class="right text-primary" ng-show="!orderForm.email.$invalid">
+              <i class="icon-checkmark-circle size-14"></i>
+            </small>
+          </span>
         </div>
         <div class="input">
-          <input class="m0" type="text" id="email" ng-attr-placeholder="{{'Email address'}}"
-                 name="email" ng-model="email">
+          <input class="m0" type="email" id="email" ng-attr-placeholder="{{'Email address'}}"
+                 name="email" ng-model="email" required>
         </div>
       </div>
       
@@ -118,7 +146,7 @@
           Place order
         </button>
       </div>
-
+    </form>
 
     </div>
 
