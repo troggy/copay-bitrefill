@@ -88,8 +88,9 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
     
     $scope.placeOrder = function() {
-      var fc = profileService.focusedClient;
-      
+      var fc = profileService.focusedClient,
+          formattedPhone = $scope.orderForm.phone.$viewValue;
+          
       addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
         if (!refundAddress) {
           return handleError(bwsError.msg(err, 'Could not create address'));
@@ -110,9 +111,9 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              amount: result.satoshiPrice,
              customData: { 
                bitrefillOrderId: result.orderId,
-               description: result.valuePackage + ' ' + $scope.selectedOp.currency + ' to ' + result.number
+               description: result.valuePackage + ' ' + $scope.selectedOp.currency + ' to ' + formattedPhone
              },
-             message: 'Refill ' + result.number + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
+             message: 'Refill ' + formattedPhone + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
            }
            self.createAndSendTx(txOpts, function(err, result) {
              if (err) {
