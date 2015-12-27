@@ -174,7 +174,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       $timeout(function() {
         feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
           fc.sendTxProposal({
-            toAddress: 'mgUKqoerzxsaUVtbrYWsh4FxxZDwwywaK5' , // txOpts.toAddress,
+            toAddress: txOpts.toAddress,
             amount: txOpts.amount,
             message: txOpts.message,
             customData: txOpts.customData,
