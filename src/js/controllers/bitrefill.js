@@ -2,13 +2,17 @@
 
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
-           animationService, feeService, addressService, bwsError, isCordova,
+           animationService, storageService, feeService, addressService, bwsError, isCordova,
            gettext, refillStatus, lodash, bitrefill, go) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = configWallet.settings.feeLevel || 'normal'
         self = this;
     $scope.phone = null;
+    
+    storageService.getBitrefillReceiptEmail(function(err, email) {
+       $scope.email = email;
+    });
     
     var lookupNumber = $scope.lookupNumber = function(operator) {
       $scope.error = null;
@@ -89,7 +93,9 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              if (err) {
                handleError(err);
              }
-             go.walletHome();
+             storageService.setBitrefillReceiptEmail($scope.email, function() {
+                go.walletHome();
+             });
            })
          });
        });
