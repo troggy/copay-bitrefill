@@ -28,9 +28,27 @@
         {{ error|translate }}
       </span>
     </div>
+    
+    <div class="m20t" ng-hide="isMainnet">
+      <div class="text-center text-warning">
+        <i class="fi-alert"></i>
+        <span translate>
+          You are using testnet wallet
+        </span>
+      </div>
+      <div class="text-center text-gray m15r m15l" translate>
+        To proceed with refill switch to mainnet wallet and try again
+      </div>
+      <div class="text-center m10t ">
+        <span class="button outline round dark-gray tiny"
+          ng-click="openWalletsList()">
+          <span translate>Change wallet</span>
+        </span>
+      </div>
+    </div>
 
 
-    <form name="orderForm">
+    <form name="orderForm" ng-show="isMainnet">
     
     <div class="large-12 columns m20t" >
       <div class="bitrefill--order-field">

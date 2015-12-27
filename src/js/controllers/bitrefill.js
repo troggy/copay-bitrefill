@@ -6,9 +6,12 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            gettext, refillStatus, lodash, bitrefill, go) {
     
     var configWallet = configService.getSync().wallet,
-        currentFeeLevel = configWallet.settings.feeLevel || 'normal'
+        currentFeeLevel = configWallet.settings.feeLevel || 'normal',
+        fc = profileService.focusedClient,
         self = this;
+        
     $scope.phone = null;
+    $scope.isMainnet = (fc.credentials.network === 'livenet');
     
     storageService.getBitrefillReceiptEmail(function(err, email) {
        $scope.email = email;
@@ -40,6 +43,10 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       });
     };
     
+    $scope.openWalletsList = function() {
+      go.swipe(true);
+    };
+    
     $scope.updateBtcValue = function(value, valueSat) {
       if (!valueSat) {
         valueSat = value * $scope.selectedOp.range.customerSatoshiPriceRate;
@@ -62,8 +69,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
     
     $scope.placeOrder = function() {
-      var fc = profileService.focusedClient,
-          formattedPhone = $scope.orderForm.phone.$viewValue;
+      var formattedPhone = $scope.orderForm.phone.$viewValue;
           
       addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
         if (!refundAddress) {
@@ -91,7 +97,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            }
            self.createAndSendTx(txOpts, function(err, result) {
              if (err) {
-               handleError(err);
+               return handleError(err);
              }
              storageService.setBitrefillReceiptEmail($scope.email, function() {
                 go.walletHome();
@@ -166,7 +172,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     
     this.createAndSendTx = function(txOpts, cb) {
       var self = this,
-          fc = profileService.focusedClient,
           currentSpendUnconfirmed = configWallet.spendUnconfirmed;
       
       if (fc.isPrivKeyEncrypted()) {
@@ -224,8 +229,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
 
     this._setOngoingForSigning = function() {
-      var fc = profileService.focusedClient;
-
       if (fc.isPrivKeyExternal() && fc.getPrivKeyExternalSourceName() == 'ledger') {
         self.setOngoingProcess(gettext('Requesting Ledger Wallet to sign'));
       } else {
@@ -234,8 +237,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
 
     var _signAndBroadcast = function(txp, cb) {
-      var fc = profileService.focusedClient;
-
       self._setOngoingForSigning();
       profileService.signTxProposal(txp, function(err, signedTx) {
         self.setOngoingProcess();
