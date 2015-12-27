@@ -3,7 +3,7 @@
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill) {
+           gettext, refillStatus, lodash, bitrefill, go) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = configWallet.settings.feeLevel || 'normal'
@@ -20,7 +20,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         if (err) {
             return handleError(err.message || err.error || err);
         }
-        console.log(result);
+        $log.debug(result);
         $scope.operators = result.altOperators;
         $scope.operators.push(lodash.pick(result.operator, ['slug', 'name', 'logoImage']));
         $scope.country = result.country;
@@ -64,7 +64,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              return handleError(err);
            }
          
-           console.log(result);
+           $log.debug(result);
            $scope.error = null;
            var txOpts = {
              toAddress: result.payment.address,
@@ -77,9 +77,9 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            }
            self.createAndSendTx(txOpts, function(err, result) {
              if (err) {
-               return handleError(err);
+               handleError(err);
              }
-             console.log(result);
+             go.walletHome();
            })
          });
        });

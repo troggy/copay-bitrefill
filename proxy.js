@@ -25,15 +25,12 @@ var forwardResponse = function(res) {
     if (err) {
       res.status(500).send(err).end();
     } else {
-      body.delivered = true;
-      body.paymentReceived = true;
       res.status(200).send(body).end();
     }  
   };
 };
 
 app.get('/lookup_number', function(req, res) {
-  console.log(JSON.stringify(req.query, null, 2));
   bitrefill.lookup_number(req.query.number, req.query.operatorSlug, forwardResponse(res));
 });
 
