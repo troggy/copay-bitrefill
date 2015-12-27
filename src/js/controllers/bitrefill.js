@@ -11,9 +11,12 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     $scope.phone = null;
     
     var lookupNumber = $scope.lookupNumber = function(operator) {
+      $scope.error = null;
+      self.setOngoingProcess(gettext('Looking up operator'));
       bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
+        self.setOngoingProcess();
         if (err) {
-            return;
+            return handleError(err.message || err.error || err);
         }
         console.log(result);
         $scope.operators = result.altOperators;
