@@ -36,7 +36,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            gettext, refillStatus, lodash, bitrefill, go) {
     
     var configWallet = configService.getSync().wallet,
-        currentFeeLevel = configWallet.settings.feeLevel || 'normal',
+        currentFeeLevel = 'normal',
         fc = profileService.focusedClient,
         self = this;
         
