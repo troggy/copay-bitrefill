@@ -118,6 +118,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            }
            self.createAndSendTx(txOpts, function(err, result) {
              if (err) {
+               storageService.setBitrefillReceiptEmail($scope.email, function() {});
                return handleError(err);
              }
              storageService.setBitrefillReceiptEmail($scope.email, function() {
