@@ -44,7 +44,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
 
   var openModal = function(type, txp, cb) {
     var fc = profileService.focusedClient;
-    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bitrefill) {
+    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bitrefill, pusher) {
       $scope.type = type;
       $scope.tx = txFormatService.processTx(txp);
       $scope.color = fc.backgroundColor;
@@ -52,26 +52,12 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
         StatusBar.hide();
       }
       
-      var pollStatus = function() {
-        bitrefill.orderStatus(txp.customData.bitrefillOrderId, function(err, result) {
-            if (err) {
-              $log.error(err);
-              $scope.failed = err;
-              return;
-            }
-            
-            if (!result.paymentReceived) { // payment still not received. Poll again in second
-              $timeout(pollStatus, 1000);
-            } else if (!result.delivered) { // delivery error
-              $scope.failed = result.errorMessage || 'Failed to deliver order';
-            } else { // delivered, but might require pin code
-              $scope.delivered = result.delivered && !result.pinInfo;
-              $scope.pinInfo = result.pinInfo;
-            }
-        });
-      };
+      var orderId = txp.customData.bitrefillOrderId,
+          paymentAddress = txp.toAddress;
       
-      pollStatus();
+      pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
+        $scope.orderStatus = orderStatus;
+      });
       
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');

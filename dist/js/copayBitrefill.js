@@ -328,6 +328,52 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
 
 'use strict';
 
+angular.module('copayAddon.bitrefill').service('pusher',
+  function($log) {
+    Pusher.log = function(message) {
+      $log.debug(message);
+    };
+    
+    var pusher = new Pusher('0837b617cfe786c32a91', {
+      encrypted: true
+    });
+    
+    var callback = function(status, data, msg, cb) {
+      var result = { status: 'status', data: data, msg: msg };
+      result[status] = true;
+      cb(result);
+    };
+    
+    var subscribe = function(orderId, paymentAddress, cb) {
+      var channelName = [orderId, paymentAddress].join('-'),
+          channel = pusher.subscribe(channelName);
+
+      channel.bind('paid', function(data) {
+        callback('paid', data, null, cb);
+      });
+      channel.bind('confirmed', function(data) {
+        callback('confirmed', data, null, cb);
+      });
+      channel.bind('partial', function(data) {
+        callback('partial', data, null, cb);
+      });
+      channel.bind('delivered', function(data) {
+        pusher.unsubscribe(channelName);
+        callback('delivered', data, null, cb);
+      });
+      channel.bind('failed', function(data, msg) {
+        pusher.unsubscribe(channelName);
+        callback('failed', data, msg, cb);
+      });
+    };
+    
+    return {
+      subscribe: subscribe
+    };
+});
+
+'use strict';
+
 angular.module('copayAddon.bitrefill').factory('refillStatus',
  function($modal, lodash, profileService, $timeout, txFormatService, isCordova) {
   var root = {};
@@ -372,7 +418,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
 
   var openModal = function(type, txp, cb) {
     var fc = profileService.focusedClient;
-    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bitrefill) {
+    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bitrefill, pusher) {
       $scope.type = type;
       $scope.tx = txFormatService.processTx(txp);
       $scope.color = fc.backgroundColor;
@@ -380,26 +426,12 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
         StatusBar.hide();
       }
       
-      var pollStatus = function() {
-        bitrefill.orderStatus(txp.customData.bitrefillOrderId, function(err, result) {
-            if (err) {
-              $log.error(err);
-              $scope.failed = err;
-              return;
-            }
-            
-            if (!result.paymentReceived) { // payment still not received. Poll again in second
-              $timeout(pollStatus, 1000);
-            } else if (!result.delivered) { // delivery error
-              $scope.failed = result.errorMessage || 'Failed to deliver order';
-            } else { // delivered, but might require pin code
-              $scope.delivered = result.delivered && !result.pinInfo;
-              $scope.pinInfo = result.pinInfo;
-            }
-        });
-      };
+      var orderId = txp.customData.bitrefillOrderId,
+          paymentAddress = txp.toAddress;
       
-      pollStatus();
+      pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
+        $scope.orderStatus = orderStatus;
+      });
       
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
@@ -602,6 +634,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "    </div>\n" +
     "\n" +
     "</div> <!--/content-->\n" +
+    "<script src=\"//js.pusher.com/3.0/pusher.min.js\"></script>\n" +
     "");
 }]);
 
@@ -642,39 +675,43 @@ angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateC
   $templateCache.put("bitrefill/views/modals/refill-status.html",
     "<div ng-if=\"type == 'broadcasted'\" class=\"popup-txsent text-center\">\n" +
     "  <i class=\"small-centered columns m20tp\" \n" +
-    "    ng-class=\"{'fi-clock': !delivered && !failed, 'fi-check': delivered,\n" +
-    "     'fi-thumbnails': pinInfo, 'fi-x': failed }\"\n" +
+    "    ng-class=\"{\n" +
+    "      'fi-clock': !orderStatus || orderStatus.paid || orderStatus.confirmed,\n" +
+    "      'fi-check': orderStatus.delivered,\n" +
+    "      'fi-thumbnails': orderStatus.data.pinInfo,\n" +
+    "      'fi-x': orderStatus.failed || orderStatus.partial\n" +
+    "      }\"\n" +
     "    ng-style=\"{'color':color, 'border-color':color}\"></i>\n" +
-    "  <div ng-show=\"tx.amountStr\" ng-hide=\"delivered || failed || pinInfo\" class=\"m20t size-24 text-white\">\n" +
+    "  <div ng-show=\"!orderStatus || orderStatus.paid || orderStatus.confirmed\" class=\"m20t size-24 text-white\">\n" +
     "    Waiting for order to complete..\n" +
     "  </div>\n" +
-    "  <div ng-show=\"pinInfo\" class=\"m20t size-24 text-white\">\n" +
+    "  <div ng-show=\"orderStatus.data.pinInfo\" class=\"m20t size-24 text-white\">\n" +
     "    PIN required\n" +
     "  </div>\n" +
     "  \n" +
-    "  <div ng-show=\"delivered\" class=\"m20t size-24 text-white\">\n" +
+    "  <div ng-show=\"orderStatus.delivered && !orderStatus.data.pinInfo\" class=\"m20t size-24 text-white\">\n" +
     "    Delivered\n" +
     "  </div>\n" +
-    "  <div ng-show=\"failed\" class=\"m20t size-24 text-white\">\n" +
+    "  <div ng-show=\"orderStatus.failed || orderStatus.partial\" class=\"m20t size-24 text-white\">\n" +
     "    Failed\n" +
     "  </div>\n" +
     "  \n" +
-    "  <div class=\"size-16 text-gray\" ng-show=\"pinInfo\">\n" +
-    "    <div class=\"m10t\" translate>{{ pinInfo.instructions }}</div>\n" +
+    "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.data.pinInfo\">\n" +
+    "    <div class=\"m10t\" translate>{{ orderStatus.data.pinInfo.instructions }}</div>\n" +
     "    <div class=\"m10t\"><span translate>Your PIN code</span>:</div>\n" +
-    "    <div class=\"bitrefill--pin-code\" translate>{{ pinInfo.pin }}</div>\n" +
-    "    <small translate>{{ pinInfo.other}}</small>\n" +
+    "    <div class=\"bitrefill--pin-code\" translate>{{ orderStatus.data.pinInfo.pin }}</div>\n" +
+    "    <small translate>{{ orderStatus.data.pinInfo.other}}</small>\n" +
     "  </div>\n" +
     "  \n" +
-    "  <div class=\"size-16 text-gray\" ng-show=\"delivered\" translate>\n" +
+    "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.delivered && !orderStatus.data.pinInfo\" translate>\n" +
     "    {{ tx.customData.description }}\n" +
     "  </div>\n" +
     "\n" +
-    "  <div class=\"size-16 text-gray\" ng-show=\"failed\" translate>\n" +
-    "    {{ failed }}\n" +
+    "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.failed || orderStatus.partial\" translate>\n" +
+    "    {{ orderStatus.msg || 'Failed to process order' }}\n" +
     "  </div>\n" +
     "\n" +
-    "  <div class=\"size-16 text-gray\" ng-hide=\"delivered || failed || pinInfo\">\n" +
+    "  <div class=\"size-16 text-gray\" ng-show=\"!orderStatus || orderStatus.paid || orderStatus.confirmed\">\n" +
     "    <div translate>Payment sent</div>\n" +
     "    <div translate>{{ tx.customData.description }}</div>\n" +
     "  </div>\n" +
@@ -682,6 +719,7 @@ angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateC
     "  <div class=\"text-center m20t\">\n" +
     "    <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\">OKAY</a>\n" +
     "  </div>\n" +
+    "  <a ng-click=\"toggleStatus()\">next</a>\n" +
     "</div>\n" +
     "\n" +
     "\n" +
