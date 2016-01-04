@@ -2,15 +2,6 @@
   display: block;
 }
 
-.intl-tel-input .country-list,
-.intl-tel-input .selected-flag .arrow {
-  display: none !important;
-}
-/*
-.iti-flag {
-  background-image: url("img/flags.png");
-}*/
-
 .intl-tel-input input,
 .intl-tel-input input[type=text],
 .intl-tel-input input[type=tel] {
