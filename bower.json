@@ -19,7 +19,7 @@
     "tests"
   ],
   "dependencies": {
-    "international-phone-number": "troggy/international-phone-number#upgrade-intl-tel-input",
+    "international-phone-number": "troggy/international-phone-number#fix-set-value",
     "ngBitrefill": "~1.0.0"
   }
 }

@@ -38,18 +38,20 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
         fc = profileService.focusedClient,
+        bitrefillConfig,
         self = this;
         
-    $scope.phone = null;
     $scope.isMainnet = (fc.credentials.network === 'livenet');
     
-    storageService.getBitrefillReceiptEmail(function(err, email) {
-       $scope.email = email;
+    storageService.getBitrefillConfig(function(err, bitrefillConfig) {
+       self.bitrefillConfig = bitrefillConfig || {};
+       $scope.amount = self.bitrefillConfig.amount;
+       $scope.email = self.bitrefillConfig.email;
+       $scope.phone = self.bitrefillConfig.phone;
     });
     
     var lookupNumber = $scope.lookupNumber = function(operator) {
       $scope.error = null;
-      $scope.amount = null;
       $scope.btcValueStr = null;
       $scope.package = null;
       self.setOngoingProcess(gettext('Looking up operator'));
@@ -147,11 +149,14 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              message: 'Refill ' + formattedPhone + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
            }
            self.createAndSendTx(txOpts, function(err, result) {
+             self.bitrefillConfig.email = $scope.email;
+             self.bitrefillConfig.amount = $scope.amount;
+             self.bitrefillConfig.phone = $scope.phone;
              if (err) {
-               storageService.setBitrefillReceiptEmail($scope.email, function() {});
+               storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
                return handleError(err);
              }
-             storageService.setBitrefillReceiptEmail($scope.email, function() {
+             storageService.setBitrefillConfig($scope.email, function() {
                 go.walletHome();
              });
            })
