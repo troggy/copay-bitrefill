@@ -28,20 +28,27 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
         self.setOngoingProcess();
         if (err) {
-            return handleError(err.message || err.error || err);
+            return handleError(err.message || err.error.message || err);
         }
         $log.debug(result);
         $scope.operators = result.altOperators;
-        $scope.operators.push(lodash.pick(result.operator, ['slug', 'name', 'logoImage']));
         $scope.country = result.country;
-        $scope.selectedOp = result.operator;
-        var packages = result.operator.packages;
-        packages.forEach(function(package) {
-            package.valueStr = package.value + ' ' + $scope.selectedOp.currency;
-            package.btcValueStr = profileService.formatAmount(package.satoshiPrice)
-                                + ' ' + configWallet.settings.unitName;
-        });
-        $scope.packages = packages;
+        if (result.operator) {
+          $scope.operators.push(lodash.pick(result.operator, ['slug', 'name', 'logoImage']));
+          $scope.selectedOp = result.operator;
+          var packages = result.operator.packages;
+          packages.forEach(function(package) {
+              package.valueStr = package.value + ' ' + $scope.selectedOp.currency;
+              package.btcValueStr = profileService.formatAmount(package.satoshiPrice)
+                                  + ' ' + configWallet.settings.unitName;
+          });
+          $scope.packages = packages;
+          if (!result.operator.isRanged) {
+            $scope.amount = null;
+          } else {
+            $scope.package = null;
+          }
+        }
       });
     };
     

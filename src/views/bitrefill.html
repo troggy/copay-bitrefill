@@ -56,8 +56,8 @@
           <label for="phone" class="left" >
             <span translate>Phone number to refill</span>
           </label>
-          <span ng-hide="orderForm.phone.$pristine">
-            <span class="has-error right size-12" ng-show="orderForm.phone.$invalid">
+          <span>
+            <span class="has-error right size-12" ng-show="orderForm.phone.$dirty && orderForm.phone.$invalid">
               <i class="icon-close-circle size-14"></i>
               <span class="vm" translate>Not valid</span>
             </span>
@@ -70,54 +70,79 @@
         <div class="input">
           <input class="m0" type="text" id="phone" name="phone"
                minLength="4" ng-model="phone" initial-country="auto" required
-               ng-disabled="selectedOp"
+               ng-disabled="operators"
                geo-ip-lookup="geoIpLookup"
                skip-util-script-download international-phone-number>
         </div>
       </div>
       
-      <div class="m20t" ng-hide="selectedOp">
+      <div class="m20t" ng-hide="operators">
         <button class="button black round expand" ng-click="lookupNumber()"
           ng-disabled="loading || !phone" translate>
           Continue
         </button>
       </div>
       
-      <div ng-show="selectedOp" class="m10t bitrefill--order-field">
+      <div ng-show="operators" class="m10t bitrefill--order-field">
           <div class="row collapse">
             <label for="operator" class="left" >
               <span translate>Operator</span>
             </label>
+            <span>
+              <span class="has-error right size-12" ng-show="!selectedOp">
+                <i class="icon-close-circle size-14"></i>
+                <span class="vm" translate>Not valid</span>
+              </span>
+              <small class="right text-primary" ng-show="selectedOp">
+                <i class="icon-checkmark-circle size-14"></i>
+              </small>
+            </span>
           </div>
           <div class="bitrefill--selectedOp" ng-click="openOperatorsModal(operators, selectedOp)">
-            <div class="right text-gray">
-              <i class="icon-arrow-right3 size-24"></i>
-            </div>
-            <div class="bitrefill--operator-item">
+            <div class="bitrefill--operator-item" ng-show="selectedOp">
               <img src="{{ selectedOp.logoImage }}"/>
               <span class="bitrefill--operator-name">{{ selectedOp.name }}</span>
+              <div class="right text-gray">
+                <i class="icon-arrow-right3 size-24"></i>
+              </div>
+            </div>
+            <div class="bitrefill--operator-item" ng-hide="selectedOp">
+              <span class="bitrefill--operator-name" translate>Click to select</span>
+              <div class="right text-gray">
+                <i class="icon-arrow-right3 size-24"></i>
+              </div>
             </div>
           </div>
       </div>
       
       <div ng-show="selectedOp && !selectedOp.isRanged" class="m10t">
-          <label><span translate>Amount</span>
-            <select class="m10t" ng-model="package"
-              ng-options="package as package.valueStr for package in packages"
-              ng-change="updateBtcValue(package.value, package.satoshiPrice)" required>
-              <option value="">Select package...</option>
-            </select>
-          </label>
-      </div>
-      
-      <div ng-show="selectedOp && selectedOp.isRanged" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="amount" class="left" >
             <span translate>Amount</span>
-            <small translate>From {{selectedOp.range.min}} to {{selectedOp.range.max}} {{selectedOp.currency}}</small>
           </label>
-          <span ng-hide="orderForm.amount.$pristine">
-            <span class="has-error right size-12" ng-show="orderForm.amount.$invalid">
+          <span>
+            <small class="right text-primary" ng-show="package">
+              <i class="icon-checkmark-circle size-14"></i>
+            </small>
+          </span>
+        </div>
+        <div class="input">
+          <select ng-model="package"
+            ng-options="package as package.valueStr for package in packages"
+            ng-change="updateBtcValue(package.value, package.satoshiPrice)" required>
+            <option value="">Select package...</option>
+          </select>
+        </div>
+      </div>
+      
+      <div ng-show="(selectedOp && selectedOp.isRanged) || (operators && !selectedOp)" class="m10t bitrefill--order-field">
+        <div class="row collapse">
+          <label for="amount" class="left" >
+            <span translate>Amount</span>
+            <small ng-show="selectedOp" translate>From {{selectedOp.range.min}} to {{selectedOp.range.max}} {{selectedOp.currency}}</small>
+          </label>
+          <span>
+            <span class="has-error right size-12" ng-show="orderForm.amount.$dirty && orderForm.amount.$invalid">
               <i class="icon-close-circle size-14"></i>
               <span class="vm" translate>Not valid</span>
             </span>
@@ -128,7 +153,7 @@
         </div>
         <div class="input">
           <input class="m0" type="number" id="amount"
-                 ng-attr-placeholder="{{'Amount in'}} {{selectedOp.currency}}"
+                 ng-attr-placeholder="{{selectedOp.currency}} {{'amount'}}"
                  min="{{selectedOp.range.min}}"
                  max="{{selectedOp.range.max}}"
                  step="{{selectedOp.range.step}}"
@@ -137,14 +162,14 @@
         </div>
       </div>
       
-      <div ng-show="selectedOp" class="m10t bitrefill--order-field">
+      <div ng-show="operators" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="email" class="left" >
             <span translate>Email</span>
             <small translate>Receipt will be sent to this email</small>
           </label>
-          <span ng-show="orderForm.email.$dirty">
-            <span class="has-error right size-12" ng-show="orderForm.email.$invalid">
+          <span>
+            <span class="has-error right size-12" ng-show="orderForm.email.$dirty && orderForm.email.$invalid">
               <i class="icon-close-circle size-14"></i>
               <span class="vm" translate>Not valid</span>
             </span>
@@ -161,7 +186,7 @@
       
       <div ng-show="btcValueStr" class="bitrefill--btc-value"><span translate>You will pay</span> <strong>{{ btcValueStr }}</strong></div>
       
-      <div class="columns" ng-show="selectedOp">
+      <div class="columns" ng-show="operators">
         <button class="button black round expand" ng-disabled="!isValid() || loading" 
                 ng-click="placeOrder()" translate>
           Place order

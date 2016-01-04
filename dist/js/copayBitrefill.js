@@ -58,20 +58,27 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
         self.setOngoingProcess();
         if (err) {
-            return handleError(err.message || err.error || err);
+            return handleError(err.message || err.error.message || err);
         }
         $log.debug(result);
         $scope.operators = result.altOperators;
-        $scope.operators.push(lodash.pick(result.operator, ['slug', 'name', 'logoImage']));
         $scope.country = result.country;
-        $scope.selectedOp = result.operator;
-        var packages = result.operator.packages;
-        packages.forEach(function(package) {
-            package.valueStr = package.value + ' ' + $scope.selectedOp.currency;
-            package.btcValueStr = profileService.formatAmount(package.satoshiPrice)
-                                + ' ' + configWallet.settings.unitName;
-        });
-        $scope.packages = packages;
+        if (result.operator) {
+          $scope.operators.push(lodash.pick(result.operator, ['slug', 'name', 'logoImage']));
+          $scope.selectedOp = result.operator;
+          var packages = result.operator.packages;
+          packages.forEach(function(package) {
+              package.valueStr = package.value + ' ' + $scope.selectedOp.currency;
+              package.btcValueStr = profileService.formatAmount(package.satoshiPrice)
+                                  + ' ' + configWallet.settings.unitName;
+          });
+          $scope.packages = packages;
+          if (!result.operator.isRanged) {
+            $scope.amount = null;
+          } else {
+            $scope.package = null;
+          }
+        }
       });
     };
     
@@ -524,8 +531,8 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "          <label for=\"phone\" class=\"left\" >\n" +
     "            <span translate>Phone number to refill</span>\n" +
     "          </label>\n" +
-    "          <span ng-hide=\"orderForm.phone.$pristine\">\n" +
-    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.phone.$invalid\">\n" +
+    "          <span>\n" +
+    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.phone.$dirty && orderForm.phone.$invalid\">\n" +
     "              <i class=\"icon-close-circle size-14\"></i>\n" +
     "              <span class=\"vm\" translate>Not valid</span>\n" +
     "            </span>\n" +
@@ -538,54 +545,79 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        <div class=\"input\">\n" +
     "          <input class=\"m0\" type=\"text\" id=\"phone\" name=\"phone\"\n" +
     "               minLength=\"4\" ng-model=\"phone\" initial-country=\"auto\" required\n" +
-    "               ng-disabled=\"selectedOp\"\n" +
+    "               ng-disabled=\"operators\"\n" +
     "               geo-ip-lookup=\"geoIpLookup\"\n" +
     "               skip-util-script-download international-phone-number>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "      \n" +
-    "      <div class=\"m20t\" ng-hide=\"selectedOp\">\n" +
+    "      <div class=\"m20t\" ng-hide=\"operators\">\n" +
     "        <button class=\"button black round expand\" ng-click=\"lookupNumber()\"\n" +
     "          ng-disabled=\"loading || !phone\" translate>\n" +
     "          Continue\n" +
     "        </button>\n" +
     "      </div>\n" +
     "      \n" +
-    "      <div ng-show=\"selectedOp\" class=\"m10t bitrefill--order-field\">\n" +
+    "      <div ng-show=\"operators\" class=\"m10t bitrefill--order-field\">\n" +
     "          <div class=\"row collapse\">\n" +
     "            <label for=\"operator\" class=\"left\" >\n" +
     "              <span translate>Operator</span>\n" +
     "            </label>\n" +
+    "            <span>\n" +
+    "              <span class=\"has-error right size-12\" ng-show=\"!selectedOp\">\n" +
+    "                <i class=\"icon-close-circle size-14\"></i>\n" +
+    "                <span class=\"vm\" translate>Not valid</span>\n" +
+    "              </span>\n" +
+    "              <small class=\"right text-primary\" ng-show=\"selectedOp\">\n" +
+    "                <i class=\"icon-checkmark-circle size-14\"></i>\n" +
+    "              </small>\n" +
+    "            </span>\n" +
     "          </div>\n" +
     "          <div class=\"bitrefill--selectedOp\" ng-click=\"openOperatorsModal(operators, selectedOp)\">\n" +
-    "            <div class=\"right text-gray\">\n" +
-    "              <i class=\"icon-arrow-right3 size-24\"></i>\n" +
-    "            </div>\n" +
-    "            <div class=\"bitrefill--operator-item\">\n" +
+    "            <div class=\"bitrefill--operator-item\" ng-show=\"selectedOp\">\n" +
     "              <img src=\"{{ selectedOp.logoImage }}\"/>\n" +
     "              <span class=\"bitrefill--operator-name\">{{ selectedOp.name }}</span>\n" +
+    "              <div class=\"right text-gray\">\n" +
+    "                <i class=\"icon-arrow-right3 size-24\"></i>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "            <div class=\"bitrefill--operator-item\" ng-hide=\"selectedOp\">\n" +
+    "              <span class=\"bitrefill--operator-name\" translate>Click to select</span>\n" +
+    "              <div class=\"right text-gray\">\n" +
+    "                <i class=\"icon-arrow-right3 size-24\"></i>\n" +
+    "              </div>\n" +
     "            </div>\n" +
     "          </div>\n" +
     "      </div>\n" +
     "      \n" +
     "      <div ng-show=\"selectedOp && !selectedOp.isRanged\" class=\"m10t\">\n" +
-    "          <label><span translate>Amount</span>\n" +
-    "            <select class=\"m10t\" ng-model=\"package\"\n" +
-    "              ng-options=\"package as package.valueStr for package in packages\"\n" +
-    "              ng-change=\"updateBtcValue(package.value, package.satoshiPrice)\" required>\n" +
-    "              <option value=\"\">Select package...</option>\n" +
-    "            </select>\n" +
-    "          </label>\n" +
-    "      </div>\n" +
-    "      \n" +
-    "      <div ng-show=\"selectedOp && selectedOp.isRanged\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"amount\" class=\"left\" >\n" +
     "            <span translate>Amount</span>\n" +
-    "            <small translate>From {{selectedOp.range.min}} to {{selectedOp.range.max}} {{selectedOp.currency}}</small>\n" +
     "          </label>\n" +
-    "          <span ng-hide=\"orderForm.amount.$pristine\">\n" +
-    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.amount.$invalid\">\n" +
+    "          <span>\n" +
+    "            <small class=\"right text-primary\" ng-show=\"package\">\n" +
+    "              <i class=\"icon-checkmark-circle size-14\"></i>\n" +
+    "            </small>\n" +
+    "          </span>\n" +
+    "        </div>\n" +
+    "        <div class=\"input\">\n" +
+    "          <select ng-model=\"package\"\n" +
+    "            ng-options=\"package as package.valueStr for package in packages\"\n" +
+    "            ng-change=\"updateBtcValue(package.value, package.satoshiPrice)\" required>\n" +
+    "            <option value=\"\">Select package...</option>\n" +
+    "          </select>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      \n" +
+    "      <div ng-show=\"(selectedOp && selectedOp.isRanged) || (operators && !selectedOp)\" class=\"m10t bitrefill--order-field\">\n" +
+    "        <div class=\"row collapse\">\n" +
+    "          <label for=\"amount\" class=\"left\" >\n" +
+    "            <span translate>Amount</span>\n" +
+    "            <small ng-show=\"selectedOp\" translate>From {{selectedOp.range.min}} to {{selectedOp.range.max}} {{selectedOp.currency}}</small>\n" +
+    "          </label>\n" +
+    "          <span>\n" +
+    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.amount.$dirty && orderForm.amount.$invalid\">\n" +
     "              <i class=\"icon-close-circle size-14\"></i>\n" +
     "              <span class=\"vm\" translate>Not valid</span>\n" +
     "            </span>\n" +
@@ -596,7 +628,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        </div>\n" +
     "        <div class=\"input\">\n" +
     "          <input class=\"m0\" type=\"number\" id=\"amount\"\n" +
-    "                 ng-attr-placeholder=\"{{'Amount in'}} {{selectedOp.currency}}\"\n" +
+    "                 ng-attr-placeholder=\"{{selectedOp.currency}} {{'amount'}}\"\n" +
     "                 min=\"{{selectedOp.range.min}}\"\n" +
     "                 max=\"{{selectedOp.range.max}}\"\n" +
     "                 step=\"{{selectedOp.range.step}}\"\n" +
@@ -605,14 +637,14 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        </div>\n" +
     "      </div>\n" +
     "      \n" +
-    "      <div ng-show=\"selectedOp\" class=\"m10t bitrefill--order-field\">\n" +
+    "      <div ng-show=\"operators\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"email\" class=\"left\" >\n" +
     "            <span translate>Email</span>\n" +
     "            <small translate>Receipt will be sent to this email</small>\n" +
     "          </label>\n" +
-    "          <span ng-show=\"orderForm.email.$dirty\">\n" +
-    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.email.$invalid\">\n" +
+    "          <span>\n" +
+    "            <span class=\"has-error right size-12\" ng-show=\"orderForm.email.$dirty && orderForm.email.$invalid\">\n" +
     "              <i class=\"icon-close-circle size-14\"></i>\n" +
     "              <span class=\"vm\" translate>Not valid</span>\n" +
     "            </span>\n" +
@@ -629,7 +661,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "      \n" +
     "      <div ng-show=\"btcValueStr\" class=\"bitrefill--btc-value\"><span translate>You will pay</span> <strong>{{ btcValueStr }}</strong></div>\n" +
     "      \n" +
-    "      <div class=\"columns\" ng-show=\"selectedOp\">\n" +
+    "      <div class=\"columns\" ng-show=\"operators\">\n" +
     "        <button class=\"button black round expand\" ng-disabled=\"!isValid() || loading\" \n" +
     "                ng-click=\"placeOrder()\" translate>\n" +
     "          Place order\n" +

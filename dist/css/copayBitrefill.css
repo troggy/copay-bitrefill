@@ -36,6 +36,8 @@ ul.bitrefill--package-list li {
   line-height: 1.5;
   list-style: none;
   padding: 5px 0;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .bitrefill--operator-item img {
