@@ -20,12 +20,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
        $scope.phone = self.bitrefillConfig.phone;
     });
     
-    var lookupNumber = $scope.lookupNumber = function(operator) {
-      $scope.error = null;
-      $scope.btcValueStr = null;
-      $scope.package = null;
+    var lookupNumber = $scope.lookupNumber = function() {
+      $scope.error = $scope.btcValueStr = $scope.package = null;
+      var operatorSlug = $scope.selectedOp ? $scope.selectedOp.slug : null;
       self.setOngoingProcess(gettext('Looking up operator'));
-      bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
+      bitrefill.lookupNumber($scope.phone, operatorSlug, function(err, result) {
         self.setOngoingProcess();
         if (err) {
             return handleError(err.message || err.error.message || err);
@@ -139,50 +138,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            })
          });
        });
-    };
-    
-    $scope.openOperatorsModal = function(operators, selectedOp) {
-      $rootScope.modalOpened = true;
-
-      var ModalInstanceCtrl = function($scope, $modalInstance) {
-        $scope.error = null;
-        $scope.loading = null;
-        
-        $scope.operators = operators;
-        $scope.selectedOp = selectedOp;
-
-        $scope.cancel = lodash.debounce(function() {
-          $modalInstance.dismiss('cancel');
-        }, 0, 1000);
-        
-        $scope.selectOperator = function(operatorSlug) {
-            lookupNumber(operatorSlug);
-            $scope.cancel();
-        };
-        
-      };
-
-      var modalInstance = $modal.open({
-        templateUrl: 'bitrefill/views/modals/operators.html',
-        windowClass: animationService.modalAnimated.slideRight,
-        controller: ModalInstanceCtrl,
-      });
-
-      var disableCloseModal = $rootScope.$on('closeModal', function() {
-        modalInstance.dismiss('cancel');
-      });
-
-      modalInstance.result.finally(function() {
-        $rootScope.modalOpened = false;
-        disableCloseModal();
-        var m = angular.element(document.getElementsByClassName('reveal-modal'));
-        m.addClass(animationService.modalAnimated.slideOutRight);
-      });
-
-      modalInstance.result.then(function(txp) {
-        self.setOngoingProcess();
-      });
-
     };
     
     this.setOngoingProcess = function(name) {

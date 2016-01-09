@@ -70,7 +70,7 @@
         <div class="input">
           <input class="m0" type="text" id="phone" name="phone"
                minLength="4" ng-model="phone" initial-country="auto" required
-               ng-disabled="operators"
+               ng-disabled="operators || loading"
                geo-ip-lookup="geoIpLookup"
                skip-util-script-download international-phone-number>
         </div>
@@ -98,24 +98,17 @@
               </small>
             </span>
           </div>
-          <div class="bitrefill--selectedOp" ng-click="openOperatorsModal(operators, selectedOp)">
-            <div class="bitrefill--operator-item" ng-show="selectedOp">
-              <img src="{{ selectedOp.logoImage }}"/>
-              <span class="bitrefill--operator-name">{{ selectedOp.name }}</span>
-              <div class="right text-gray">
-                <i class="icon-arrow-right3 size-24"></i>
-              </div>
-            </div>
-            <div class="bitrefill--operator-item" ng-hide="selectedOp">
-              <span class="bitrefill--operator-name" translate>Click to select</span>
-              <div class="right text-gray">
-                <i class="icon-arrow-right3 size-24"></i>
-              </div>
-            </div>
+          <div class="input">
+            <select ng-model="selectedOp"
+              ng-options="operator as operator.name for operator in operators track by operator.slug"
+              ng-disabled="loading"
+              ng-change="lookupNumber()" required>
+              <option value="">Select operator...</option>
+            </select>
           </div>
       </div>
       
-      <div ng-show="selectedOp && !selectedOp.isRanged" class="m10t">
+      <div ng-show="selectedOp && !selectedOp.isRanged" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="amount" class="left" >
             <span translate>Amount</span>
@@ -129,6 +122,7 @@
         <div class="input">
           <select ng-model="package"
             ng-options="package as package.valueStr for package in packages"
+            ng-disabled="loading"
             ng-change="updateBtcValue(package.value, package.satoshiPrice)" required>
             <option value="">Select package...</option>
           </select>
@@ -158,6 +152,7 @@
                  max="{{selectedOp.range.max}}"
                  step="{{selectedOp.range.step}}"
                  ng-change="updateBtcValue(amount)"
+                 ng-disabled="loading"
                  name="amount" ng-model="amount" required>
         </div>
       </div>
@@ -180,6 +175,7 @@
         </div>
         <div class="input">
           <input class="m0" type="email" id="email" ng-attr-placeholder="{{'Email address'}}"
+                 ng-disabled="loading"
                  name="email" ng-model="email" required>
         </div>
       </div>

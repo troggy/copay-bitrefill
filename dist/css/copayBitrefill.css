@@ -53,3 +53,7 @@ ul.bitrefill--package-list li {
 .bitrefill--order-field {
   margin-bottom: 1.5rem;
 }
+
+.bitrefill--order-field select {
+  margin-bottom: 0;
+}

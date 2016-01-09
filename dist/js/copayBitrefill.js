@@ -50,12 +50,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
        $scope.phone = self.bitrefillConfig.phone;
     });
     
-    var lookupNumber = $scope.lookupNumber = function(operator) {
-      $scope.error = null;
-      $scope.btcValueStr = null;
-      $scope.package = null;
+    var lookupNumber = $scope.lookupNumber = function() {
+      $scope.error = $scope.btcValueStr = $scope.package = null;
+      var operatorSlug = $scope.selectedOp ? $scope.selectedOp.slug : null;
       self.setOngoingProcess(gettext('Looking up operator'));
-      bitrefill.lookupNumber($scope.phone, operator, function(err, result) {
+      bitrefill.lookupNumber($scope.phone, operatorSlug, function(err, result) {
         self.setOngoingProcess();
         if (err) {
             return handleError(err.message || err.error.message || err);
@@ -169,50 +168,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            })
          });
        });
-    };
-    
-    $scope.openOperatorsModal = function(operators, selectedOp) {
-      $rootScope.modalOpened = true;
-
-      var ModalInstanceCtrl = function($scope, $modalInstance) {
-        $scope.error = null;
-        $scope.loading = null;
-        
-        $scope.operators = operators;
-        $scope.selectedOp = selectedOp;
-
-        $scope.cancel = lodash.debounce(function() {
-          $modalInstance.dismiss('cancel');
-        }, 0, 1000);
-        
-        $scope.selectOperator = function(operatorSlug) {
-            lookupNumber(operatorSlug);
-            $scope.cancel();
-        };
-        
-      };
-
-      var modalInstance = $modal.open({
-        templateUrl: 'bitrefill/views/modals/operators.html',
-        windowClass: animationService.modalAnimated.slideRight,
-        controller: ModalInstanceCtrl,
-      });
-
-      var disableCloseModal = $rootScope.$on('closeModal', function() {
-        modalInstance.dismiss('cancel');
-      });
-
-      modalInstance.result.finally(function() {
-        $rootScope.modalOpened = false;
-        disableCloseModal();
-        var m = angular.element(document.getElementsByClassName('reveal-modal'));
-        m.addClass(animationService.modalAnimated.slideOutRight);
-      });
-
-      modalInstance.result.then(function(txp) {
-        self.setOngoingProcess();
-      });
-
     };
     
     this.setOngoingProcess = function(name) {
@@ -469,7 +424,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
   return root;
 });
 
-angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/operators.html', 'bitrefill/views/modals/refill-status.html']);
+angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/refill-status.html']);
 
 angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("bitrefill/views/bitrefill.html",
@@ -545,7 +500,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        <div class=\"input\">\n" +
     "          <input class=\"m0\" type=\"text\" id=\"phone\" name=\"phone\"\n" +
     "               minLength=\"4\" ng-model=\"phone\" initial-country=\"auto\" required\n" +
-    "               ng-disabled=\"operators\"\n" +
+    "               ng-disabled=\"operators || loading\"\n" +
     "               geo-ip-lookup=\"geoIpLookup\"\n" +
     "               skip-util-script-download international-phone-number>\n" +
     "        </div>\n" +
@@ -573,24 +528,17 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "              </small>\n" +
     "            </span>\n" +
     "          </div>\n" +
-    "          <div class=\"bitrefill--selectedOp\" ng-click=\"openOperatorsModal(operators, selectedOp)\">\n" +
-    "            <div class=\"bitrefill--operator-item\" ng-show=\"selectedOp\">\n" +
-    "              <img src=\"{{ selectedOp.logoImage }}\"/>\n" +
-    "              <span class=\"bitrefill--operator-name\">{{ selectedOp.name }}</span>\n" +
-    "              <div class=\"right text-gray\">\n" +
-    "                <i class=\"icon-arrow-right3 size-24\"></i>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "            <div class=\"bitrefill--operator-item\" ng-hide=\"selectedOp\">\n" +
-    "              <span class=\"bitrefill--operator-name\" translate>Click to select</span>\n" +
-    "              <div class=\"right text-gray\">\n" +
-    "                <i class=\"icon-arrow-right3 size-24\"></i>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
+    "          <div class=\"input\">\n" +
+    "            <select ng-model=\"selectedOp\"\n" +
+    "              ng-options=\"operator as operator.name for operator in operators track by operator.slug\"\n" +
+    "              ng-disabled=\"loading\"\n" +
+    "              ng-change=\"lookupNumber()\" required>\n" +
+    "              <option value=\"\">Select operator...</option>\n" +
+    "            </select>\n" +
     "          </div>\n" +
     "      </div>\n" +
     "      \n" +
-    "      <div ng-show=\"selectedOp && !selectedOp.isRanged\" class=\"m10t\">\n" +
+    "      <div ng-show=\"selectedOp && !selectedOp.isRanged\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"amount\" class=\"left\" >\n" +
     "            <span translate>Amount</span>\n" +
@@ -604,6 +552,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        <div class=\"input\">\n" +
     "          <select ng-model=\"package\"\n" +
     "            ng-options=\"package as package.valueStr for package in packages\"\n" +
+    "            ng-disabled=\"loading\"\n" +
     "            ng-change=\"updateBtcValue(package.value, package.satoshiPrice)\" required>\n" +
     "            <option value=\"\">Select package...</option>\n" +
     "          </select>\n" +
@@ -633,6 +582,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "                 max=\"{{selectedOp.range.max}}\"\n" +
     "                 step=\"{{selectedOp.range.step}}\"\n" +
     "                 ng-change=\"updateBtcValue(amount)\"\n" +
+    "                 ng-disabled=\"loading\"\n" +
     "                 name=\"amount\" ng-model=\"amount\" required>\n" +
     "        </div>\n" +
     "      </div>\n" +
@@ -655,6 +605,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        </div>\n" +
     "        <div class=\"input\">\n" +
     "          <input class=\"m0\" type=\"email\" id=\"email\" ng-attr-placeholder=\"{{'Email address'}}\"\n" +
+    "                 ng-disabled=\"loading\"\n" +
     "                 name=\"email\" ng-model=\"email\" required>\n" +
     "        </div>\n" +
     "      </div>\n" +
@@ -673,39 +624,6 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "\n" +
     "</div> <!--/content-->\n" +
     "<script src=\"//js.pusher.com/3.0/pusher.min.js\"></script>\n" +
-    "");
-}]);
-
-angular.module("bitrefill/views/modals/operators.html", []).run(["$templateCache", function($templateCache) {
-  $templateCache.put("bitrefill/views/modals/operators.html",
-    "<nav class=\"tab-bar\" ng-style=\"{'background-color':color}\">\n" +
-    "  <section class=\"left-small\">\n" +
-    "    <a ng-click=\"cancel()\">\n" +
-    "      <i class=\"icon-arrow-left3 icon-back\"></i>\n" +
-    "      <span class=\"text-back\" translate>Back</span>\n" +
-    "    </a>\n" +
-    "  </section>\n" +
-    "  <section class=\"middle tab-bar-section\">\n" +
-    "    <h1 class=\"title ellipsis\" translate>\n" +
-    "      Select operator\n" +
-    "    </h1>\n" +
-    "  </section>\n" +
-    "</nav>\n" +
-    "<div class=\"modal-content fix-modals-touch\" \n" +
-    "     ng-swipe-disable-mouse\n" +
-    "     ng-swipe-right=\"cancel()\">\n" +
-    "\n" +
-    "   <ul class=\"no-bullet m0 bitrefill--operator-list\">\n" +
-    "     <li ng-repeat=\"op in operators | orderBy: name\" class=\"bitrefill--operator-item\" \n" +
-    "         ng-click=\"selectOperator(op.slug)\">\n" +
-    "       <img ng-src=\"{{ op.logoImage }}\"/>\n" +
-    "       <span class=\"bitrefill--operator-name\">{{ op.name }}</span>\n" +
-    "       <i class=\"fi-check size-16 right\" ng-show=\"selectedOp.slug == op.slug\"></i>\n" +
-    "     </li>\n" +
-    "   </ul>\n" +
-    "\n" +
-    "  <div class=\"extra-margin-bottom\"></div>\n" +
-    "</div>\n" +
     "");
 }]);
 
