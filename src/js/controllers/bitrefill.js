@@ -18,10 +18,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
        $scope.amount = self.bitrefillConfig.amount;
        $scope.email = self.bitrefillConfig.email;
        $scope.phone = self.bitrefillConfig.phone;
+       $scope.package = self.bitrefillConfig.package;
     });
     
     var lookupNumber = $scope.lookupNumber = function() {
-      $scope.error = $scope.btcValueStr = $scope.package = null;
+      $scope.error = $scope.btcValueStr = null;
       var operatorSlug = $scope.selectedOp ? $scope.selectedOp.slug : null;
       self.setOngoingProcess(gettext('Looking up operator'));
       bitrefill.lookupNumber($scope.phone, operatorSlug, function(err, result) {
@@ -129,6 +130,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              self.bitrefillConfig.email = $scope.email;
              self.bitrefillConfig.amount = $scope.amount;
              self.bitrefillConfig.phone = $scope.phone;
+             self.bitrefillConfig.package = $scope.package;
              if (err) {
                storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
                return handleError(err);

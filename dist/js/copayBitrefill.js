@@ -48,10 +48,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
        $scope.amount = self.bitrefillConfig.amount;
        $scope.email = self.bitrefillConfig.email;
        $scope.phone = self.bitrefillConfig.phone;
+       $scope.package = self.bitrefillConfig.package;
     });
     
     var lookupNumber = $scope.lookupNumber = function() {
-      $scope.error = $scope.btcValueStr = $scope.package = null;
+      $scope.error = $scope.btcValueStr = null;
       var operatorSlug = $scope.selectedOp ? $scope.selectedOp.slug : null;
       self.setOngoingProcess(gettext('Looking up operator'));
       bitrefill.lookupNumber($scope.phone, operatorSlug, function(err, result) {
@@ -159,6 +160,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              self.bitrefillConfig.email = $scope.email;
              self.bitrefillConfig.amount = $scope.amount;
              self.bitrefillConfig.phone = $scope.phone;
+             self.bitrefillConfig.package = $scope.package;
              if (err) {
                storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
                return handleError(err);
@@ -552,7 +554,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        </div>\n" +
     "        <div class=\"input\">\n" +
     "          <select ng-model=\"package\"\n" +
-    "            ng-options=\"package as package.valueStr for package in packages\"\n" +
+    "            ng-options=\"package as package.valueStr for package in packages track by package.value\"\n" +
     "            ng-disabled=\"loading\"\n" +
     "            ng-change=\"updateBtcValue(package.value, package.satoshiPrice)\" required>\n" +
     "            <option value=\"\">Select package...</option>\n" +

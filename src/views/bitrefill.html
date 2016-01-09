@@ -121,7 +121,7 @@
         </div>
         <div class="input">
           <select ng-model="package"
-            ng-options="package as package.valueStr for package in packages"
+            ng-options="package as package.valueStr for package in packages track by package.value"
             ng-disabled="loading"
             ng-change="updateBtcValue(package.value, package.satoshiPrice)" required>
             <option value="">Select package...</option>
