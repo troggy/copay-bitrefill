@@ -30,7 +30,7 @@
   </div>
   
   <div class="size-16 text-gray" ng-show="orderStatus.delivered && !orderStatus.data.pinInfo" translate>
-    {{ tx.customData.description }}
+    {{ tx.message }}
   </div>
 
   <div class="size-16 text-gray" ng-show="orderStatus.failed || orderStatus.partial" translate>
@@ -39,13 +39,12 @@
 
   <div class="size-16 text-gray" ng-show="!orderStatus || orderStatus.paid || orderStatus.confirmed">
     <div translate>Payment sent</div>
-    <div translate>{{ tx.customData.description }}</div>
+    <div translate>{{ tx.message }}</div>
   </div>
   
   <div class="text-center m20t">
     <a class="button outline round light-gray tiny small-4" ng-click="cancel()">OKAY</a>
   </div>
-  <a ng-click="toggleStatus()">next</a>
 </div>
 
 

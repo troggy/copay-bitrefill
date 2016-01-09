@@ -98,7 +98,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
     
     $scope.placeOrder = function() {
-      var formattedPhone = $scope.orderForm.phone.$viewValue;
+      var formattedPhone = $scope.orderForm.phone.formattedValue;
           
       addressService.getAddress(fc.credentials.walletId, null, function(err, refundAddress) {
         if (!refundAddress) {
@@ -119,10 +119,11 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              toAddress: result.payment.address,
              amount: result.satoshiPrice,
              customData: { 
-               bitrefillOrderId: result.orderId,
-               description: result.valuePackage + ' ' + $scope.selectedOp.currency + ' to ' + formattedPhone
+               bitrefillOrderId: result.orderId
              },
-             message: 'Refill ' + formattedPhone + ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
+             message: 'Refill ' + formattedPhone + 
+                ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
+                '. Order ID: ' + result.orderId
            }
            self.createAndSendTx(txOpts, function(err, result) {
              self.bitrefillConfig.email = $scope.email;
@@ -132,7 +133,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
                storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
                return handleError(err);
              }
-             storageService.setBitrefillConfig($scope.email, function() {
+             storageService.setBitrefillConfig(self.bitrefillConfig, function() {
                 go.walletHome();
              });
            })
