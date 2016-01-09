@@ -389,7 +389,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
 
   var openModal = function(type, txp, cb) {
     var fc = profileService.focusedClient;
-    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bitrefill, pusher) {
+    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bwcService, bitrefill, pusher) {
       $scope.type = type;
       $scope.tx = txFormatService.processTx(txp);
       $scope.color = fc.backgroundColor;
@@ -399,6 +399,8 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       
       var orderId = txp.customData.bitrefillOrderId,
           paymentAddress = txp.toAddress;
+      
+      txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
       
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
