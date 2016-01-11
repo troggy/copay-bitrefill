@@ -335,7 +335,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
 
       var modalInstance = $modal.open({
         templateUrl: 'bitrefill/views/modals/confirmation.html',
-        windowClass: animationService.modalAnimated.slideRight,
+        windowClass: animationService.modalAnimated.slideRight + ' bitrefill--confirm',
         controller: ModalInstanceCtrl,
       });
 
@@ -698,7 +698,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
 
 angular.module("bitrefill/views/modals/confirmation.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("bitrefill/views/modals/confirmation.html",
-    "<div class=\"bitrefill--confirm\">\n" +
+    "<div>\n" +
     "  <div class=\"bitrefill--confirm-logo text-center small-centered columns m20t\" ng-style=\"{'color':color, 'border-color':color}\">\n" +
     "    <img ng-src=\"{{order.operator.logoImage}}\">\n" +
     "  </div>\n" +

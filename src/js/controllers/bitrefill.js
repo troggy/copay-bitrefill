@@ -305,7 +305,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
 
       var modalInstance = $modal.open({
         templateUrl: 'bitrefill/views/modals/confirmation.html',
-        windowClass: animationService.modalAnimated.slideRight,
+        windowClass: animationService.modalAnimated.slideRight + ' bitrefill--confirm',
         controller: ModalInstanceCtrl,
       });
 
