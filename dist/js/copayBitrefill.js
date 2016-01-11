@@ -141,7 +141,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            $scope.amount || $scope.package.value, $scope.email, refundAddress, function(err, result) {
 
            if (err) {
-             return handleError(err);
+             return handleError(err.message || err.error.message || err);
            }
 
            $log.debug(result);
