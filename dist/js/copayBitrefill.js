@@ -143,32 +143,48 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            if (err) {
              return handleError(err);
            }
-         
+
            $log.debug(result);
            $scope.error = null;
-           var txOpts = {
-             toAddress: result.payment.address,
-             amount: result.satoshiPrice,
-             customData: { 
-               bitrefillOrderId: result.orderId
-             },
-             message: 'Refill ' + formattedPhone + 
-                ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
-                '. Order ID: ' + result.orderId
-           }
-           self.createAndSendTx(txOpts, function(err, result) {
-             self.bitrefillConfig.email = $scope.email;
-             self.bitrefillConfig.amount = $scope.amount;
-             self.bitrefillConfig.phone = $scope.phone;
-             self.bitrefillConfig.package = $scope.package;
-             if (err) {
-               storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
-               return handleError(err);
+           self.setOngoingProcess();
+           
+           var order = {
+             operator: $scope.selectedOp,
+             email: $scope.email,
+             phone: formattedPhone,
+             btcValueStr: profileService.formatAmount(result.satoshiPrice) + ' ' + configWallet.settings.unitName,
+             amount: $scope.amount || $scope.package.value,
+             currency: $scope.selectedOp.currency,
+             orderId: result.orderId
+           };
+
+           self.showConfirmation(order, function(modalCallback) {
+             var txOpts = {
+               toAddress: result.payment.address,
+               amount: result.satoshiPrice,
+               customData: { 
+                 bitrefillOrderId: result.orderId
+               },
+               message: 'Refill ' + formattedPhone + 
+                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
+                  '. Order ID: ' + result.orderId
              }
-             storageService.setBitrefillConfig(self.bitrefillConfig, function() {
-                go.walletHome();
+             self.createAndSendTx(txOpts, function(err, result) {
+               self.bitrefillConfig.email = $scope.email;
+               self.bitrefillConfig.amount = $scope.amount;
+               self.bitrefillConfig.phone = $scope.phone;
+               self.bitrefillConfig.package = $scope.package;
+               
+               if (err) {
+                 storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
+                 modalCallback();
+                 return handleError(err);
+               }
+               storageService.setBitrefillConfig(self.bitrefillConfig, function() {
+                  go.walletHome();
+               });
              });
-           })
+           });
          });
        });
     };
@@ -295,6 +311,50 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         }
       });
     };
+    
+    self.showConfirmation = function(order, successCallback) {
+      $rootScope.modalOpened = true;
+      
+      var ModalInstanceCtrl = function($scope, $modalInstance) {
+        $scope.error = null;
+        $scope.loading = null;
+        
+        $scope.order = order;        
+
+        $scope.cancel = lodash.debounce(function() {
+          $modalInstance.dismiss('cancel');
+        }, 0, 1000);
+        
+        $scope.confirmAndPay = function() {
+            successCallback(function() {
+              $scope.cancel();
+            });
+        };
+        
+      };
+
+      var modalInstance = $modal.open({
+        templateUrl: 'bitrefill/views/modals/confirmation.html',
+        windowClass: animationService.modalAnimated.slideRight,
+        controller: ModalInstanceCtrl,
+      });
+
+      var disableCloseModal = $rootScope.$on('closeModal', function() {
+        modalInstance.dismiss('cancel');
+      });
+
+      modalInstance.result.finally(function() {
+        $rootScope.modalOpened = false;
+        disableCloseModal();
+        var m = angular.element(document.getElementsByClassName('reveal-modal'));
+        m.addClass(animationService.modalAnimated.slideOutRight);
+      });
+
+      modalInstance.result.then(function(txp) {
+        self.setOngoingProcess();
+      });
+
+    };
 });
 
 'use strict';
@@ -400,7 +460,11 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       var orderId = txp.customData.bitrefillOrderId,
           paymentAddress = txp.toAddress;
       
-      txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
+      try {
+        txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
+      } catch (e) {
+        // assume message is not encrypted
+      }
       
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
@@ -429,7 +493,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
   return root;
 });
 
-angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/refill-status.html']);
+angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/confirmation.html', 'bitrefill/views/modals/refill-status.html']);
 
 angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("bitrefill/views/bitrefill.html",
@@ -630,6 +694,55 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "</div> <!--/content-->\n" +
     "<script src=\"//js.pusher.com/3.0/pusher.min.js\"></script>\n" +
     "");
+}]);
+
+angular.module("bitrefill/views/modals/confirmation.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("bitrefill/views/modals/confirmation.html",
+    "<div class=\"bitrefill--confirm\">\n" +
+    "  <div class=\"bitrefill--confirm-logo text-center small-centered columns m20t\" ng-style=\"{'color':color, 'border-color':color}\">\n" +
+    "    <img ng-src=\"{{order.operator.logoImage}}\">\n" +
+    "  </div>\n" +
+    "  \n" +
+    "  <div class=\"text-center size-18 text-bold p20\" ng-style=\"{'color':color}\">\n" +
+    "    Your order\n" +
+    "  </div>\n" +
+    "  \n" +
+    "  <div class=\"size-16 text-gray columns\" translate>\n" +
+    "    <label translate>Refill ordered:</label>\n" +
+    "    <div>\n" +
+    "        {{ order.operator.name }} {{ order.amount }} {{ order.currency }}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
+    "    <label translate>Phone number:</label>\n" +
+    "    <div>\n" +
+    "        {{ order.phone }}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
+    "    <label translate>Price:</label>\n" +
+    "    <div>\n" +
+    "        {{ order.btcValueStr }}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
+    "    <label translate>Order ID:</label>\n" +
+    "    <div>\n" +
+    "        {{ order.orderId }}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
+    "    <label translate>Email:</label>\n" +
+    "    <div>\n" +
+    "        {{ order.email }}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"text-center columns m20t\">\n" +
+    "    <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\">cancel</a>\n" +
+    "    <a class=\"button round light-gray tiny small-4\" ng-click=\"confirmAndPay()\">Pay</a>\n" +
+    "  </div>\n" +
+    "</div>");
 }]);
 
 angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateCache", function($templateCache) {

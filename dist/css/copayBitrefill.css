@@ -57,3 +57,12 @@ ul.bitrefill--package-list li {
 .bitrefill--order-field select {
   margin-bottom: 0;
 }
+
+.bitrefill--confirm {
+  background-color: #F6F7F9;
+  padding: 0 20px;
+}
+
+.bitrefill--confirm-logo img {
+  width: 100px;
+}

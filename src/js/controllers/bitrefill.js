@@ -113,32 +113,48 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
            if (err) {
              return handleError(err);
            }
-         
+
            $log.debug(result);
            $scope.error = null;
-           var txOpts = {
-             toAddress: result.payment.address,
-             amount: result.satoshiPrice,
-             customData: { 
-               bitrefillOrderId: result.orderId
-             },
-             message: 'Refill ' + formattedPhone + 
-                ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
-                '. Order ID: ' + result.orderId
-           }
-           self.createAndSendTx(txOpts, function(err, result) {
-             self.bitrefillConfig.email = $scope.email;
-             self.bitrefillConfig.amount = $scope.amount;
-             self.bitrefillConfig.phone = $scope.phone;
-             self.bitrefillConfig.package = $scope.package;
-             if (err) {
-               storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
-               return handleError(err);
+           self.setOngoingProcess();
+           
+           var order = {
+             operator: $scope.selectedOp,
+             email: $scope.email,
+             phone: formattedPhone,
+             btcValueStr: profileService.formatAmount(result.satoshiPrice) + ' ' + configWallet.settings.unitName,
+             amount: $scope.amount || $scope.package.value,
+             currency: $scope.selectedOp.currency,
+             orderId: result.orderId
+           };
+
+           self.showConfirmation(order, function(modalCallback) {
+             var txOpts = {
+               toAddress: result.payment.address,
+               amount: result.satoshiPrice,
+               customData: { 
+                 bitrefillOrderId: result.orderId
+               },
+               message: 'Refill ' + formattedPhone + 
+                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
+                  '. Order ID: ' + result.orderId
              }
-             storageService.setBitrefillConfig(self.bitrefillConfig, function() {
-                go.walletHome();
+             self.createAndSendTx(txOpts, function(err, result) {
+               self.bitrefillConfig.email = $scope.email;
+               self.bitrefillConfig.amount = $scope.amount;
+               self.bitrefillConfig.phone = $scope.phone;
+               self.bitrefillConfig.package = $scope.package;
+               
+               if (err) {
+                 storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
+                 modalCallback();
+                 return handleError(err);
+               }
+               storageService.setBitrefillConfig(self.bitrefillConfig, function() {
+                  go.walletHome();
+               });
              });
-           })
+           });
          });
        });
     };
@@ -264,5 +280,49 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
           });
         }
       });
+    };
+    
+    self.showConfirmation = function(order, successCallback) {
+      $rootScope.modalOpened = true;
+      
+      var ModalInstanceCtrl = function($scope, $modalInstance) {
+        $scope.error = null;
+        $scope.loading = null;
+        
+        $scope.order = order;        
+
+        $scope.cancel = lodash.debounce(function() {
+          $modalInstance.dismiss('cancel');
+        }, 0, 1000);
+        
+        $scope.confirmAndPay = function() {
+            successCallback(function() {
+              $scope.cancel();
+            });
+        };
+        
+      };
+
+      var modalInstance = $modal.open({
+        templateUrl: 'bitrefill/views/modals/confirmation.html',
+        windowClass: animationService.modalAnimated.slideRight,
+        controller: ModalInstanceCtrl,
+      });
+
+      var disableCloseModal = $rootScope.$on('closeModal', function() {
+        modalInstance.dismiss('cancel');
+      });
+
+      modalInstance.result.finally(function() {
+        $rootScope.modalOpened = false;
+        disableCloseModal();
+        var m = angular.element(document.getElementsByClassName('reveal-modal'));
+        m.addClass(animationService.modalAnimated.slideOutRight);
+      });
+
+      modalInstance.result.then(function(txp) {
+        self.setOngoingProcess();
+      });
+
     };
 });

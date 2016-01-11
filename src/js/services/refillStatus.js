@@ -55,7 +55,11 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       var orderId = txp.customData.bitrefillOrderId,
           paymentAddress = txp.toAddress;
       
-      txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
+      try {
+        txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
+      } catch (e) {
+        // assume message is not encrypted
+      }
       
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
