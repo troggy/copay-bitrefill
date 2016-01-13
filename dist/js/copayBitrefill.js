@@ -6,8 +6,6 @@ var module = angular.module('copayAddon.bitrefill', [
   'copayBitrefill.views'
 ]);
 
-module.constant('isDebug', true);
-
 module
     .config(function (bitrefillProvider, $stateProvider) {
       
@@ -572,7 +570,6 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "          <input class=\"m0\" type=\"text\" id=\"phone\" name=\"phone\"\n" +
     "               minLength=\"4\" ng-model=\"phone\" initial-country=\"auto\" required\n" +
     "               ng-disabled=\"operators || loading\"\n" +
-    "               geo-ip-lookup=\"geoIpLookup\"\n" +
     "               skip-util-script-download international-phone-number>\n" +
     "        </div>\n" +
     "      </div>\n" +
