@@ -29,7 +29,7 @@
       </span>
     </div>
     
-    <div class="m20t" ng-hide="isMainnet">
+    <div class="m20t" ng-hide="isMainnet || isDebug">
       <div class="text-center text-warning">
         <i class="fi-alert"></i>
         <span translate>
@@ -47,8 +47,7 @@
       </div>
     </div>
 
-
-    <form name="orderForm" ng-show="isMainnet">
+    <form name="orderForm" ng-show="isMainnet || isDebug">
     
     <div class="large-12 columns m20t" >
       <div class="bitrefill--order-field">

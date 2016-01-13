@@ -3,7 +3,7 @@
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, storageService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill, go) {
+           gettext, refillStatus, lodash, bitrefill, go, isDebug) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
@@ -12,6 +12,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         self = this;
         
     $scope.isMainnet = (fc.credentials.network === 'livenet');
+    $scope.isDebug = isDebug;
     
     storageService.getBitrefillConfig(function(err, bitrefillConfig) {
        self.bitrefillConfig = bitrefillConfig || {};
@@ -194,7 +195,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       $timeout(function() {
         feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
           fc.sendTxProposal({
-            toAddress: txOpts.toAddress,
+            toAddress: isDebug ? "n2oyYcUzocaY2qdUYpbpKe9dGZDGxHAuVF" : txOpts.toAddress,
             amount: txOpts.amount,
             message: txOpts.message,
             customData: txOpts.customData,

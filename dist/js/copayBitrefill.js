@@ -6,6 +6,8 @@ var module = angular.module('copayAddon.bitrefill', [
   'copayBitrefill.views'
 ]);
 
+module.constant('isDebug', true);
+
 module
     .config(function (bitrefillProvider, $stateProvider) {
       
@@ -33,7 +35,7 @@ module
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, storageService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill, go) {
+           gettext, refillStatus, lodash, bitrefill, go, isDebug) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
@@ -42,6 +44,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         self = this;
         
     $scope.isMainnet = (fc.credentials.network === 'livenet');
+    $scope.isDebug = isDebug;
     
     storageService.getBitrefillConfig(function(err, bitrefillConfig) {
        self.bitrefillConfig = bitrefillConfig || {};
@@ -224,7 +227,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       $timeout(function() {
         feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
           fc.sendTxProposal({
-            toAddress: txOpts.toAddress,
+            toAddress: isDebug ? "n2oyYcUzocaY2qdUYpbpKe9dGZDGxHAuVF" : txOpts.toAddress,
             amount: txOpts.amount,
             message: txOpts.message,
             customData: txOpts.customData,
@@ -528,7 +531,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "      </span>\n" +
     "    </div>\n" +
     "    \n" +
-    "    <div class=\"m20t\" ng-hide=\"isMainnet\">\n" +
+    "    <div class=\"m20t\" ng-hide=\"isMainnet || isDebug\">\n" +
     "      <div class=\"text-center text-warning\">\n" +
     "        <i class=\"fi-alert\"></i>\n" +
     "        <span translate>\n" +
@@ -546,8 +549,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "      </div>\n" +
     "    </div>\n" +
     "\n" +
-    "\n" +
-    "    <form name=\"orderForm\" ng-show=\"isMainnet\">\n" +
+    "    <form name=\"orderForm\" ng-show=\"isMainnet || isDebug\">\n" +
     "    \n" +
     "    <div class=\"large-12 columns m20t\" >\n" +
     "      <div class=\"bitrefill--order-field\">\n" +
