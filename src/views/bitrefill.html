@@ -70,6 +70,7 @@
           <input class="m0" type="text" id="phone" name="phone"
                minLength="4" ng-model="phone" initial-country="auto" required
                ng-disabled="operators || loading"
+               geo-ip-lookup="geoIpLookup"
                skip-util-script-download international-phone-number>
         </div>
       </div>

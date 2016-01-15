@@ -3,9 +3,6 @@
   "version": "1.0.3",
   "description": "Angular module to add Bitrefill support to Copay wallet",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/troggy/copay-bitrefill.git"

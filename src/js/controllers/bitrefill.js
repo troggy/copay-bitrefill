@@ -56,7 +56,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     $scope.geoIpLookup = function(callback) {
       var lookedUp = false,
           defaultCountry = "US";
-      $.getJSON('http://ipinfo.io', function(resp) {
+      $.getJSON('https://www.bitrefill.com/api/ipinfo', function(resp) {
         lookedUp = true;
         var countryCode = (resp && resp.country) ? resp.country : defaultCountry;
         callback(countryCode);
