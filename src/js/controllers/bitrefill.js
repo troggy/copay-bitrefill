@@ -137,8 +137,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
                  bitrefillOrderId: result.orderId
                },
                message: 'Refill ' + formattedPhone + 
-                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
-                  '. Order ID: ' + result.orderId
+                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
              }
              self.createAndSendTx(txOpts, function(err, result) {
                self.bitrefillConfig.email = $scope.email;

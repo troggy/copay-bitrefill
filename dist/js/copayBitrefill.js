@@ -167,8 +167,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
                  bitrefillOrderId: result.orderId
                },
                message: 'Refill ' + formattedPhone + 
-                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency +
-                  '. Order ID: ' + result.orderId
+                  ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency
              }
              self.createAndSendTx(txOpts, function(err, result) {
                self.bitrefillConfig.email = $scope.email;
@@ -771,14 +770,15 @@ angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateC
     "  </div>\n" +
     "  \n" +
     "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.data.pinInfo\">\n" +
-    "    <div class=\"m10t\" translate>{{ orderStatus.data.pinInfo.instructions }}</div>\n" +
+    "    <div class=\"m10t enable_text_select\" translate>{{ orderStatus.data.pinInfo.instructions }}</div>\n" +
     "    <div class=\"m10t\"><span translate>Your PIN code</span>:</div>\n" +
-    "    <div class=\"bitrefill--pin-code\" translate>{{ orderStatus.data.pinInfo.pin }}</div>\n" +
+    "    <div class=\"bitrefill--pin-code enable_text_select\" translate>{{ orderStatus.data.pinInfo.pin }}</div>\n" +
     "    <small translate>{{ orderStatus.data.pinInfo.other}}</small>\n" +
     "  </div>\n" +
     "  \n" +
     "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.delivered && !orderStatus.data.pinInfo\" translate>\n" +
-    "    {{ tx.message }}\n" +
+    "    <div>{{ tx.message }}</div>\n" +
+    "    <small translate>Order ID: <span class=\"enable_text_select\">{{ tx.customData.bitrefillOrderId}}</span></small>\n" +
     "  </div>\n" +
     "\n" +
     "  <div class=\"size-16 text-gray\" ng-show=\"orderStatus.failed || orderStatus.partial\" translate>\n" +
@@ -788,6 +788,7 @@ angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateC
     "  <div class=\"size-16 text-gray\" ng-show=\"!orderStatus || orderStatus.paid || orderStatus.confirmed\">\n" +
     "    <div translate>Payment sent</div>\n" +
     "    <div translate>{{ tx.message }}</div>\n" +
+    "    <small translate>Order ID: <span class=\"enable_text_select\">{{ tx.customData.bitrefillOrderId}}</span></small>\n" +
     "  </div>\n" +
     "  \n" +
     "  <div class=\"text-center m20t\">\n" +
