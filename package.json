@@ -1,6 +1,6 @@
 {
   "name": "copay-bitrefill",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Angular module to add Bitrefill support to Copay wallet",
   "main": "index.js",
   "repository": {
