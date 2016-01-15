@@ -88,7 +88,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
           defaultCountry = "US";
       $.getJSON('https://www.bitrefill.com/api/ipinfo', function(resp) {
         lookedUp = true;
-        var countryCode = (resp && resp.country) ? resp.country : defaultCountry;
+        var countryCode = (resp && resp.country_code) ? resp.country_code : defaultCountry;
         callback(countryCode);
       });
       
