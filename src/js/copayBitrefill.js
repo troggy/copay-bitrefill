@@ -1,12 +1,12 @@
 'use strict';
 
-var module = angular.module('copayAddon.bitrefill', [
+var bitrefillModule = angular.module('copayAddon.bitrefill', [
   'internationalPhoneNumber',
   'ngBitrefill',
   'copayBitrefill.views'
 ]);
 
-module
+bitrefillModule
     .config(function (bitrefillProvider, $stateProvider) {
       
       bitrefillProvider.setCredentials(
