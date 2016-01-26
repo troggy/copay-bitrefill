@@ -74,10 +74,15 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
                                   + ' ' + configWallet.settings.unitName;
           });
           $scope.packages = packages;
+          
           if (!result.operator.isRanged) {
             $scope.amount = null;
+            if ($scope.package) {
+              $scope.updateBtcValue($scope.package.value, $scope.package.satoshiPrice);
+            }
           } else {
             $scope.package = null;
+            $scope.updateBtcValue($scope.amount);
           }
         }
       });
