@@ -3,7 +3,7 @@
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, storageService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill, go, isDebug) {
+           gettext, refillStatus, lodash, bitrefill, go, isDebug, txSignService) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
@@ -181,107 +181,64 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     this.createAndSendTx = function(txOpts, cb) {
       var self = this,
           currentSpendUnconfirmed = configWallet.spendUnconfirmed;
-      
-      if (fc.isPrivKeyEncrypted()) {
-        profileService.unlockFC(function(err) {
-          if (err) return cb(err);
-          return self.createAndSendTx(txOpts, cb);
-        });
-        return;
-      };
-
-      self.setOngoingProcess(gettext('Creating transaction'));
+          
       $timeout(function() {
-        feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
-          fc.sendTxProposal({
-            toAddress: isDebug ? "n2oyYcUzocaY2qdUYpbpKe9dGZDGxHAuVF" : txOpts.toAddress,
-            amount: txOpts.amount,
-            message: txOpts.message,
-            customData: txOpts.customData,
-            payProUrl: null,
-            feePerKb: feePerKb,
-            excludeUnconfirmedUtxos: currentSpendUnconfirmed ? false : true
-          }, function(err, txp) {
-            if (err) {
-              return cb(bwsError.msg(err, 'Error'));
-            }
-
-            if (!fc.canSign()) {
-              self.setOngoingProcess();
-              $log.info('No signing proposal: No private key');
-              return cb(null, { complete: false });
-            }
-            
-            _signAndBroadcast(txp, function(err) {
-              self.setOngoingProcess();
+        txSignService.prepare(function(err) {
+          if (err) {
+            return cb(bwsError.msg(err, 'Error'));
+          }
+          self.setOngoingProcess(gettext('Creating transaction'));
+          feeService.getCurrentFeeValue(currentFeeLevel, function(err, feePerKb) {
+            if (err) $log.debug(err);
+            fc.sendTxProposal({
+              toAddress: isDebug ? "n2oyYcUzocaY2qdUYpbpKe9dGZDGxHAuVF" : txOpts.toAddress,
+              amount: txOpts.amount,
+              message: txOpts.message,
+              customData: txOpts.customData,
+              payProUrl: null,
+              feePerKb: feePerKb,
+              excludeUnconfirmedUtxos: currentSpendUnconfirmed ? false : true
+            }, function(err, txp) {
               if (err) {
-                var errorMessage = err.message ? err.message : gettext('The payment was created but could not be completed. Please try again from home screen');
-                $scope.$emit('Local/TxProposalAction');
-                $timeout(function() {
-                  $scope.$digest();
-                }, 1);
-                return cb(errorMessage);
-              } else {
-                return cb(null, { complete: true })
+                self.setOngoingProcess();
+                return cb(bwsError.msg(err, 'Error'));
               }
+
+              if (!fc.canSign() && !fc.isPrivKeyExternal()) {
+                self.setOngoingProcess();
+                $log.info('No signing proposal: No private key');
+                return cb(null, { complete: false });
+              }
+
+              txSignService.signAndBroadcast(txp, {
+                reporterFn: self.setOngoingProcess.bind(self)
+              }, function(err, txp) {
+                
+                if (err) {
+                  var errorMessage = err.message ? err.message : gettext('The payment was created but could not be completed. Please try again from home screen');
+                  $scope.$emit('Local/TxProposalAction');
+                  $timeout(function() {
+                    $scope.$digest();
+                  }, 1);
+                  return cb(errorMessage);
+                } else {
+                  refillStatus.notify(txp, function() {
+                    $scope.$emit('Local/TxProposalAction');
+                    return cb(null, { complete: true })
+                  });
+                };
+              });
             });
           });
         });
-
       }, 100);
-
+      
     };
     
     this.resetError = function() {
       $scope.error = null;
     };
 
-    this._setOngoingForSigning = function() {
-      if (fc.isPrivKeyExternal() && fc.getPrivKeyExternalSourceName() == 'ledger') {
-        self.setOngoingProcess(gettext('Requesting Ledger Wallet to sign'));
-      } else {
-        self.setOngoingProcess(gettext('Signing payment'));
-      }
-    };
-
-    var _signAndBroadcast = function(txp, cb) {
-      self._setOngoingForSigning();
-      profileService.signTxProposal(txp, function(err, signedTx) {
-        self.setOngoingProcess();
-        if (err) {
-          if (!lodash.isObject(err)) {
-            err = { message: err};
-          }
-          err.message = bwsError.msg(err, gettextCatalog.getString('The payment was created but could not be signed. Please try again from home screen'));
-          return cb(err);
-        }
-
-        if (signedTx.status == 'accepted') {
-          self.setOngoingProcess(gettext('Broadcasting transaction'));
-          fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
-            self.setOngoingProcess();
-            if (err) {
-              err = bwsError.msg(err, gettextCatalog.getString('The payment was signed but could not be broadcasted. Please try again from home screen'));
-              return cb(err);
-            }
-            if (memo)
-              $log.info(memo);
-
-            refillStatus.notify(btx, function() {
-              $scope.$emit('Local/TxProposalAction', true);
-              return cb(null, btx);
-            });
-          });
-        } else {
-          self.setOngoingProcess();
-          refillStatus.notify(signedTx, function() {
-            $scope.$emit('Local/TxProposalAction');
-            return cb(null, signedTx);
-          });
-        }
-      });
-    };
-    
     self.showConfirmation = function(order, successCallback) {
       $rootScope.modalOpened = true;
       
