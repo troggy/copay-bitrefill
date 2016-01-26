@@ -63,6 +63,9 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
+        $timeout(function() {
+          $scope.$digest();
+        }, 1);
       });
       
       $scope.cancel = function() {

@@ -11,7 +11,7 @@ angular.module('copayAddon.bitrefill').service('pusher',
     });
     
     var callback = function(status, data, msg, cb) {
-      var result = { status: 'status', data: data, msg: msg };
+      var result = { status: status, data: data, msg: msg };
       result[status] = true;
       cb(result);
     };

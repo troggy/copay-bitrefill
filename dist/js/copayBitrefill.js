@@ -332,7 +332,7 @@ angular.module('copayAddon.bitrefill').service('pusher',
     });
     
     var callback = function(status, data, msg, cb) {
-      var result = { status: 'status', data: data, msg: msg };
+      var result = { status: status, data: data, msg: msg };
       result[status] = true;
       cb(result);
     };
@@ -430,6 +430,9 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
+        $timeout(function() {
+          $scope.$digest();
+        }, 1);
       });
       
       $scope.cancel = function() {
