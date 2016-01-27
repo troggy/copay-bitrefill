@@ -33,7 +33,7 @@ bitrefillModule
 angular.module('copayAddon.bitrefill').controller('bitrefillController', 
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, storageService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill, go, isDebug, txSignService) {
+           gettext, refillStatus, lodash, bitrefill, go, isDebug, txSignService, simService) {
     
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
@@ -48,7 +48,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
        self.bitrefillConfig = bitrefillConfig || {};
        $scope.amount = self.bitrefillConfig.amount;
        $scope.email = self.bitrefillConfig.email;
-       $scope.phone = self.bitrefillConfig.phone;
+       $scope.phone = self.bitrefillConfig.phone || simService.getSimInfo().phoneNumber;
        $scope.package = self.bitrefillConfig.package;
     });
     
@@ -456,6 +456,25 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
   };
 
   return root;
+});
+
+'use strict';
+
+angular.module('copayAddon.bitrefill').service('simService', function ($log) {
+  var simInfo = {};
+  
+  if (window.cordova && window.plugins && window.plugins.sim) {
+    window.plugins.sim.getSimInfo(function(_simInfo) {
+      $log.info("SIM card info: " + JSON.stringify(_simInfo));
+      simInfo = _simInfo;
+    }, function(error) {
+      $log.warn("Unable to retrieve SIM info: " + error);
+    });
+  }
+  
+  this.getSimInfo = function() {
+      return simInfo;
+  };
 });
 
 angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/confirmation.html', 'bitrefill/views/modals/refill-status.html']);
