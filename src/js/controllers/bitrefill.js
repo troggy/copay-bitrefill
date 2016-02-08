@@ -11,8 +11,10 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
         bitrefillConfig,
         self = this;
         
+    window.ignoreMobilePause = true;
     $scope.isMainnet = (fc.credentials.network === 'livenet');
     $scope.isDebug = isDebug;
+    $scope.isCordova = isCordova;
     
     storageService.getBitrefillConfig(function(err, bitrefillConfig) {
        self.bitrefillConfig = bitrefillConfig || {};
@@ -76,6 +78,74 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     
     $scope.openWalletsList = function() {
       go.swipe(true);
+    };
+    
+    $scope.pickContact = function() {
+      if (!isCordova) return;
+      navigator.contacts.pickContact(function(contact){
+        setPhoneFromContact(contact);
+      },function(err){
+        handleError(err);
+      });
+    };
+    
+    var disableResumeListener = $rootScope.$on('Local/Resume', function(event) {
+      if(event.pendingResult) {
+        if(event.pendingResult.pluginStatus === "OK") {
+          try {
+            var contact = navigator.contacts.create(event.pendingResult.result);
+            setPhoneFromContact(contact);
+          } catch (e) {
+            $log.error(e);
+            $log.info(event.pendingResult.result);
+          }
+        } else {
+          handleError(event.pendingResult.result);
+        }
+      }
+    });
+
+    $scope.$on('$destroy', function() {
+        disableResumeListener();
+    });
+    
+    var getContactMobilePhone = function(contact) {
+      var mobiles = lodash.filter(contact.phoneNumbers, function(number) {
+          return number.type == 'mobile' || number.type == 'work mobile';
+      });
+      $log.info(mobiles);
+      var prefMobile = lodash.find(mobiles, function(number) {
+          return number.pref;
+      });
+      $log.info(prefMobile);
+      if (prefMobile) {
+        return prefMobile.value;
+      }
+      
+      if (mobiles.length > 0) {
+          return mobiles[0].value;
+      }
+
+      var prefNumber = lodash.find(contact.phoneNumbers, function(number) {
+          return number.pref;
+      });
+      $log.info(prefNumber);
+      
+      if (prefNumber) {
+        return prefNumber.value;
+      }
+      
+      return contact.phoneNumbers[0].value;
+    };
+    
+    var setPhoneFromContact = function(contact) {
+        if (!contact.phoneNumbers) return;
+        $log.info(contact);
+        $scope.phone = getContactMobilePhone(contact);
+        $log.info($scope.phone);
+        $timeout(function() {
+          $rootScope.$apply();
+        });
     };
     
     $scope.updateBtcValue = function(value, valueSat) {

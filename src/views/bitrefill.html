@@ -72,6 +72,12 @@
                ng-disabled="operators || loading"
                geo-ip-lookup="geoIpLookup"
                skip-util-script-download international-phone-number>
+           <a class="postfix size-12 m0 text-gray" 
+                ng-show="isCordova"
+                ng-style="{'color':index.backgroundColor}"
+                ng-click="pickContact()">
+                <i class="icon-contact text-bold size-24"></i>
+           </a>
         </div>
       </div>
       
