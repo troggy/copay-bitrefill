@@ -51,23 +51,24 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       if (isCordova && StatusBar.isVisible) {
         StatusBar.hide();
       }
-      
+
+      txp.customData = JSON.parse(txp.customData);
       var orderId = txp.customData.bitrefillOrderId,
           paymentAddress = txp.toAddress;
-      
+
       try {
         txp.message = bwcService.getUtils().decryptMessage(txp.message, fc.credentials.sharedEncryptingKey);
       } catch (e) {
         // assume message is not encrypted
       }
-      
+
       pusher.subscribe(orderId, paymentAddress, function(orderStatus) {
         $scope.orderStatus = orderStatus;
         $timeout(function() {
           $scope.$digest();
         }, 1);
       });
-      
+
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
