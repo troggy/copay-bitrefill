@@ -1,0 +1,49 @@
+<div class="modalMask"></div>
+
+<div class="confirmTxModal" ng-init="order = confirmOrder.order">
+
+  <div class="confirmHead" ng-style="{'background-color':index.backgroundColor}">
+    <h1 class="m0 text-center text-white size-18" translate>Confirm order</h1>
+  </div>
+  <div class="p10">
+    <div class="bitrefill--confirm-logo text-center small-centered columns m10t m10b" ng-style="{'color':color, 'border-color':color}">
+      <img ng-src="{{order.operator.logoImage}}">
+    </div>
+    <div class="size-24">{{ order.operator.name }} {{ order.amount }} {{ order.currency }}</div>
+    <i class="db fi-arrow-down size-24 m10v"></i>
+    <div class="payment-proposal-to">
+      <contact class="dib enable_text_select ellipsis m5t m5b m15l size-14" address="{{ order.phone }}"></contact>
+    </div>
+    <div class="m10t size-12">
+      <span translate>Price</span>:
+      <span class="text-bold">{{ order.btcValueStr }}</span>
+      <span class="label gray radius">{{ order.altValueStr }}</span>
+    </div>
+    <div class="m10t size-12">
+      <span translate>Order ID</span>:
+      <span class="text-bold">{{ order.orderId }}</span>
+    </div>
+    <div class="m10t size-12">
+      <span translate>Email</span>:
+      <span class="text-bold">{{ order.email }}</span>
+    </div>
+
+    <div class="row m20t">
+      <div class="large-6 medium-6 small-6 columns">
+        <button
+           ng-click="confirmOrder.callback()"
+           class="small m10b round outline dark-gray expand" translate>
+          Cancel
+        </button>
+      </div>
+      <div class="large-6 medium-6 small-6 columns">
+        <button
+           ng-click="confirmOrder.callback(true)"
+           class="small m10b round expand"
+           ng-style="{'background-color':index.backgroundColor}" translate>
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

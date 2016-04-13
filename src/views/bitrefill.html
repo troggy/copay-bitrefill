@@ -1,15 +1,16 @@
-<div 
-  class="topbar-container" 
+<div
+  class="topbar-container"
   ng-include="'views/includes/topbar.html'"
   ng-init="titleSection='Top up mobile phone'; goBackToState = 'walletHome';">
 </div>
 
 
 <div class="content bitrefill" ng-controller="bitrefillController as bitrefill">
+    <div ng-include="'bitrefill/views/includes/confirm-tx.html'" ng-if="confirmOrder"></div>
     <div class="bitrefill--logo">
       <img src="img/bitrefill-logo.png" width="200">
     </div>
-    
+
     <div class="onGoingProcess" ng-show="loading">
       <div class="onGoingProcess-content" ng-style="{'background-color':index.backgroundColor}">
         <div class="spinner">
@@ -22,13 +23,13 @@
         {{ loading|translate }}...
       </div>
     </div>
-    
+
     <div class="box-notification m20t" ng-show="error" ng-click="resetError()">
       <span class="text-warning">
         {{ error|translate }}
       </span>
     </div>
-    
+
     <div class="m20t" ng-hide="isMainnet || isDebug">
       <div class="text-center text-warning">
         <i class="fi-alert"></i>
@@ -48,7 +49,7 @@
     </div>
 
     <form name="orderForm" ng-show="isMainnet || isDebug">
-    
+
     <div class="large-12 columns m20t" >
       <div class="bitrefill--order-field">
         <div class="row collapse">
@@ -72,7 +73,7 @@
                ng-disabled="operators || loading"
                geo-ip-lookup="geoIpLookup"
                skip-util-script-download international-phone-number>
-           <a class="postfix size-12 m0 text-gray" 
+           <a class="postfix size-12 m0 text-gray"
                 ng-show="isCordova"
                 ng-style="{'color':index.backgroundColor}"
                 ng-click="pickContact()">
@@ -80,14 +81,14 @@
            </a>
         </div>
       </div>
-      
+
       <div class="m20t" ng-hide="operators">
         <button class="button black round expand" ng-click="lookupNumber()"
           ng-disabled="loading || !phone" translate>
           Continue
         </button>
       </div>
-      
+
       <div ng-show="operators" class="m10t bitrefill--order-field">
           <div class="row collapse">
             <label for="operator" class="left" >
@@ -112,7 +113,7 @@
             </select>
           </div>
       </div>
-      
+
       <div ng-show="selectedOp && !selectedOp.isRanged" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="amount" class="left" >
@@ -133,7 +134,7 @@
           </select>
         </div>
       </div>
-      
+
       <div ng-show="(selectedOp && selectedOp.isRanged) || (operators && !selectedOp)" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="amount" class="left" >
@@ -161,7 +162,7 @@
                  name="amount" ng-model="amount" required>
         </div>
       </div>
-      
+
       <div ng-show="operators" class="m10t bitrefill--order-field">
         <div class="row collapse">
           <label for="email" class="left" >
@@ -184,11 +185,11 @@
                  name="email" ng-model="email" required>
         </div>
       </div>
-      
+
       <div ng-show="btcValueStr" class="bitrefill--btc-value"><span translate>You will pay</span> <strong>{{ btcValueStr }}</strong></div>
-      
+
       <div class="columns" ng-show="operators">
-        <button class="button black round expand" ng-disabled="!isValid() || loading" 
+        <button class="button black round expand" ng-disabled="!isValid() || loading"
                 ng-click="placeOrder()" translate>
           Place order
         </button>

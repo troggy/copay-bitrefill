@@ -33,7 +33,7 @@ bitrefillModule
 angular.module('copayAddon.bitrefill').controller('bitrefillController',
   function($rootScope, $scope, $log, $modal, $timeout, configService, profileService,
            animationService, storageService, feeService, addressService, bwsError, isCordova,
-           gettext, refillStatus, lodash, bitrefill, go, isDebug, txService, simService, gettextCatalog) {
+           gettext, refillStatus, lodash, bitrefill, go, isDebug, txService, simService, gettextCatalog, txFormatService) {
 
     var configWallet = configService.getSync().wallet,
         currentFeeLevel = 'normal',
@@ -229,12 +229,17 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
              email: $scope.email,
              phone: formattedPhone,
              btcValueStr: profileService.formatAmount(result.satoshiPrice) + ' ' + configWallet.settings.unitName,
+             altValueStr: txFormatService.formatAlternativeStr(result.satoshiPrice),
              amount: $scope.amount || $scope.package.value,
              currency: $scope.selectedOp.currency,
              orderId: result.orderId
            };
 
-           self.showConfirmation(order, function(modalCallback) {
+           self.showConfirmation(order, function(accept) {
+             if (!accept) {
+               return;
+             }
+             self.setOngoingProcess(gettext('Executing order'));
              var toAddress = isDebug ? "2N4FABwVoN4DMS1J4CDY9rPSyaVHVBcoUPw" : result.payment.address;
              var msg = 'Refill ' + formattedPhone +
                 ' with '+ result.valuePackage + ' ' + $scope.selectedOp.currency;
@@ -260,7 +265,6 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
 
                if (err) {
                  storageService.setBitrefillConfig(self.bitrefillConfig, function() {});
-                 modalCallback();
                  return handleError(err);
                }
                storageService.setBitrefillConfig(self.bitrefillConfig, function() {
@@ -354,48 +358,17 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
       $scope.error = null;
     };
 
-    self.showConfirmation = function(order, successCallback) {
-      $rootScope.modalOpened = true;
-
-      var ModalInstanceCtrl = function($scope, $modalInstance) {
-        $scope.error = null;
-        $scope.loading = null;
-
-        $scope.order = order;
-
-        $scope.cancel = lodash.debounce(function() {
-          $modalInstance.dismiss('cancel');
-        }, 0, 1000);
-
-        $scope.confirmAndPay = function() {
-            successCallback(function() {
-              $scope.cancel();
-            });
-        };
-
+    this.showConfirmation = function(order, cb) {
+      $scope.confirmOrder = {
+        order: order,
+        callback: function(accept) {
+          $scope.confirmOrder = null;
+          return cb(accept);
+        }
       };
-
-      var modalInstance = $modal.open({
-        templateUrl: 'bitrefill/views/modals/confirmation.html',
-        windowClass: animationService.modalAnimated.slideRight + ' bitrefill--confirm',
-        controller: ModalInstanceCtrl,
+      $timeout(function() {
+        $rootScope.$apply();
       });
-
-      var disableCloseModal = $rootScope.$on('closeModal', function() {
-        modalInstance.dismiss('cancel');
-      });
-
-      modalInstance.result.finally(function() {
-        $rootScope.modalOpened = false;
-        disableCloseModal();
-        var m = angular.element(document.getElementsByClassName('reveal-modal'));
-        m.addClass(animationService.modalAnimated.slideOutRight);
-      });
-
-      modalInstance.result.then(function(txp) {
-        self.setOngoingProcess();
-      });
-
     };
 });
 
@@ -558,22 +531,23 @@ angular.module('copayAddon.bitrefill').service('simService', function ($log) {
   };
 });
 
-angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/modals/confirmation.html', 'bitrefill/views/modals/refill-status.html']);
+angular.module('copayBitrefill.views', ['bitrefill/views/bitrefill.html', 'bitrefill/views/includes/confirm-tx.html', 'bitrefill/views/modals/refill-status.html']);
 
 angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("bitrefill/views/bitrefill.html",
-    "<div \n" +
-    "  class=\"topbar-container\" \n" +
+    "<div\n" +
+    "  class=\"topbar-container\"\n" +
     "  ng-include=\"'views/includes/topbar.html'\"\n" +
     "  ng-init=\"titleSection='Top up mobile phone'; goBackToState = 'walletHome';\">\n" +
     "</div>\n" +
     "\n" +
     "\n" +
     "<div class=\"content bitrefill\" ng-controller=\"bitrefillController as bitrefill\">\n" +
+    "    <div ng-include=\"'bitrefill/views/includes/confirm-tx.html'\" ng-if=\"confirmOrder\"></div>\n" +
     "    <div class=\"bitrefill--logo\">\n" +
     "      <img src=\"img/bitrefill-logo.png\" width=\"200\">\n" +
     "    </div>\n" +
-    "    \n" +
+    "\n" +
     "    <div class=\"onGoingProcess\" ng-show=\"loading\">\n" +
     "      <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':index.backgroundColor}\">\n" +
     "        <div class=\"spinner\">\n" +
@@ -586,13 +560,13 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "        {{ loading|translate }}...\n" +
     "      </div>\n" +
     "    </div>\n" +
-    "    \n" +
+    "\n" +
     "    <div class=\"box-notification m20t\" ng-show=\"error\" ng-click=\"resetError()\">\n" +
     "      <span class=\"text-warning\">\n" +
     "        {{ error|translate }}\n" +
     "      </span>\n" +
     "    </div>\n" +
-    "    \n" +
+    "\n" +
     "    <div class=\"m20t\" ng-hide=\"isMainnet || isDebug\">\n" +
     "      <div class=\"text-center text-warning\">\n" +
     "        <i class=\"fi-alert\"></i>\n" +
@@ -612,7 +586,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "    </div>\n" +
     "\n" +
     "    <form name=\"orderForm\" ng-show=\"isMainnet || isDebug\">\n" +
-    "    \n" +
+    "\n" +
     "    <div class=\"large-12 columns m20t\" >\n" +
     "      <div class=\"bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
@@ -636,7 +610,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "               ng-disabled=\"operators || loading\"\n" +
     "               geo-ip-lookup=\"geoIpLookup\"\n" +
     "               skip-util-script-download international-phone-number>\n" +
-    "           <a class=\"postfix size-12 m0 text-gray\" \n" +
+    "           <a class=\"postfix size-12 m0 text-gray\"\n" +
     "                ng-show=\"isCordova\"\n" +
     "                ng-style=\"{'color':index.backgroundColor}\"\n" +
     "                ng-click=\"pickContact()\">\n" +
@@ -644,14 +618,14 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "           </a>\n" +
     "        </div>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div class=\"m20t\" ng-hide=\"operators\">\n" +
     "        <button class=\"button black round expand\" ng-click=\"lookupNumber()\"\n" +
     "          ng-disabled=\"loading || !phone\" translate>\n" +
     "          Continue\n" +
     "        </button>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div ng-show=\"operators\" class=\"m10t bitrefill--order-field\">\n" +
     "          <div class=\"row collapse\">\n" +
     "            <label for=\"operator\" class=\"left\" >\n" +
@@ -676,7 +650,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "            </select>\n" +
     "          </div>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div ng-show=\"selectedOp && !selectedOp.isRanged\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"amount\" class=\"left\" >\n" +
@@ -697,7 +671,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "          </select>\n" +
     "        </div>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div ng-show=\"(selectedOp && selectedOp.isRanged) || (operators && !selectedOp)\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"amount\" class=\"left\" >\n" +
@@ -725,7 +699,7 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "                 name=\"amount\" ng-model=\"amount\" required>\n" +
     "        </div>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div ng-show=\"operators\" class=\"m10t bitrefill--order-field\">\n" +
     "        <div class=\"row collapse\">\n" +
     "          <label for=\"email\" class=\"left\" >\n" +
@@ -748,11 +722,11 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "                 name=\"email\" ng-model=\"email\" required>\n" +
     "        </div>\n" +
     "      </div>\n" +
-    "      \n" +
+    "\n" +
     "      <div ng-show=\"btcValueStr\" class=\"bitrefill--btc-value\"><span translate>You will pay</span> <strong>{{ btcValueStr }}</strong></div>\n" +
-    "      \n" +
+    "\n" +
     "      <div class=\"columns\" ng-show=\"operators\">\n" +
-    "        <button class=\"button black round expand\" ng-disabled=\"!isValid() || loading\" \n" +
+    "        <button class=\"button black round expand\" ng-disabled=\"!isValid() || loading\"\n" +
     "                ng-click=\"placeOrder()\" translate>\n" +
     "          Place order\n" +
     "        </button>\n" +
@@ -766,53 +740,58 @@ angular.module("bitrefill/views/bitrefill.html", []).run(["$templateCache", func
     "");
 }]);
 
-angular.module("bitrefill/views/modals/confirmation.html", []).run(["$templateCache", function($templateCache) {
-  $templateCache.put("bitrefill/views/modals/confirmation.html",
-    "<div>\n" +
-    "  <div class=\"bitrefill--confirm-logo text-center small-centered columns m20t\" ng-style=\"{'color':color, 'border-color':color}\">\n" +
-    "    <img ng-src=\"{{order.operator.logoImage}}\">\n" +
-    "  </div>\n" +
-    "  \n" +
-    "  <div class=\"text-center size-18 text-bold p20\" ng-style=\"{'color':color}\">\n" +
-    "    Your order\n" +
-    "  </div>\n" +
-    "  \n" +
-    "  <div class=\"size-16 text-gray columns\" translate>\n" +
-    "    <label translate>Refill ordered:</label>\n" +
-    "    <div>\n" +
-    "        {{ order.operator.name }} {{ order.amount }} {{ order.currency }}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
-    "    <label translate>Phone number:</label>\n" +
-    "    <div>\n" +
-    "        {{ order.phone }}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
-    "    <label translate>Price:</label>\n" +
-    "    <div>\n" +
-    "        {{ order.btcValueStr }}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
-    "    <label translate>Order ID:</label>\n" +
-    "    <div>\n" +
-    "        {{ order.orderId }}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class=\"size-16 text-gray columns m10t\" translate>\n" +
-    "    <label translate>Email:</label>\n" +
-    "    <div>\n" +
-    "        {{ order.email }}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
+angular.module("bitrefill/views/includes/confirm-tx.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("bitrefill/views/includes/confirm-tx.html",
+    "<div class=\"modalMask\"></div>\n" +
     "\n" +
-    "  <div class=\"text-center columns m20t\">\n" +
-    "    <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\">cancel</a>\n" +
-    "    <a class=\"button round light-gray tiny small-4\" ng-click=\"confirmAndPay()\">Pay</a>\n" +
+    "<div class=\"confirmTxModal\" ng-init=\"order = confirmOrder.order\">\n" +
+    "\n" +
+    "  <div class=\"confirmHead\" ng-style=\"{'background-color':index.backgroundColor}\">\n" +
+    "    <h1 class=\"m0 text-center text-white size-18\" translate>Confirm order</h1>\n" +
     "  </div>\n" +
-    "</div>");
+    "  <div class=\"p10\">\n" +
+    "    <div class=\"bitrefill--confirm-logo text-center small-centered columns m10t m10b\" ng-style=\"{'color':color, 'border-color':color}\">\n" +
+    "      <img ng-src=\"{{order.operator.logoImage}}\">\n" +
+    "    </div>\n" +
+    "    <div class=\"size-24\">{{ order.operator.name }} {{ order.amount }} {{ order.currency }}</div>\n" +
+    "    <i class=\"db fi-arrow-down size-24 m10v\"></i>\n" +
+    "    <div class=\"payment-proposal-to\">\n" +
+    "      <contact class=\"dib enable_text_select ellipsis m5t m5b m15l size-14\" address=\"{{ order.phone }}\"></contact>\n" +
+    "    </div>\n" +
+    "    <div class=\"m10t size-12\">\n" +
+    "      <span translate>Price</span>:\n" +
+    "      <span class=\"text-bold\">{{ order.btcValueStr }}</span>\n" +
+    "      <span class=\"label gray radius\">{{ order.altValueStr }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"m10t size-12\">\n" +
+    "      <span translate>Order ID</span>:\n" +
+    "      <span class=\"text-bold\">{{ order.orderId }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"m10t size-12\">\n" +
+    "      <span translate>Email</span>:\n" +
+    "      <span class=\"text-bold\">{{ order.email }}</span>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <div class=\"row m20t\">\n" +
+    "      <div class=\"large-6 medium-6 small-6 columns\">\n" +
+    "        <button\n" +
+    "           ng-click=\"confirmOrder.callback()\"\n" +
+    "           class=\"small m10b round outline dark-gray expand\" translate>\n" +
+    "          Cancel\n" +
+    "        </button>\n" +
+    "      </div>\n" +
+    "      <div class=\"large-6 medium-6 small-6 columns\">\n" +
+    "        <button\n" +
+    "           ng-click=\"confirmOrder.callback(true)\"\n" +
+    "           class=\"small m10b round expand\"\n" +
+    "           ng-style=\"{'background-color':index.backgroundColor}\" translate>\n" +
+    "          Confirm\n" +
+    "        </button>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</div>\n" +
+    "");
 }]);
 
 angular.module("bitrefill/views/modals/refill-status.html", []).run(["$templateCache", function($templateCache) {
