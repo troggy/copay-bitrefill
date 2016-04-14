@@ -84,6 +84,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       if (isCordova && !StatusBar.isVisible) {
         StatusBar.show();
       }
+      pusher.unsubscribe(txp.customData.bitrefillOrderId, txp.toAddress);
       var m = angular.element(document.getElementsByClassName('reveal-modal'));
       m.addClass('hideModal');
     });

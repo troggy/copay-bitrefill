@@ -179,7 +179,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
 
     $scope.updateBtcValue = function(value, valueSat) {
-      if (!value) {
+      if (!value || (!valueSat && !$scope.selectedOp.range)) {
           $scope.btcValueStr = null;
           return;
       }
@@ -379,17 +379,17 @@ angular.module('copayAddon.bitrefill').service('pusher',
     Pusher.log = function(message) {
       $log.debug(message);
     };
-    
+
     var pusher = new Pusher('0837b617cfe786c32a91', {
       encrypted: true
     });
-    
+
     var callback = function(status, data, msg, cb) {
       var result = { status: status, data: data, msg: msg };
       result[status] = true;
       cb(result);
     };
-    
+
     var subscribe = function(orderId, paymentAddress, cb) {
       var channelName = [orderId, paymentAddress].join('-'),
           channel = pusher.subscribe(channelName);
@@ -412,9 +412,15 @@ angular.module('copayAddon.bitrefill').service('pusher',
         callback('failed', data, msg, cb);
       });
     };
-    
+
+    var unsubscribe = function(orderId, paymentAddress) {
+      var channelName = [orderId, paymentAddress].join('-');
+      pusher.unsubscribe(channelName);
+    };
+
     return {
-      subscribe: subscribe
+      subscribe: subscribe,
+      unsubscribe: unsubscribe
     };
 });
 
@@ -504,6 +510,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       if (isCordova && !StatusBar.isVisible) {
         StatusBar.show();
       }
+      pusher.unsubscribe(txp.customData.bitrefillOrderId, txp.toAddress);
       var m = angular.element(document.getElementsByClassName('reveal-modal'));
       m.addClass('hideModal');
     });
