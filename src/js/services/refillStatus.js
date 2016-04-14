@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('copayAddon.bitrefill').factory('refillStatus',
- function($modal, lodash, profileService, $timeout, txFormatService, isCordova) {
+ function($modal, lodash, profileService, isCordova, $rootScope) {
   var root = {};
 
   root.notify = function(txp, cb) {
@@ -44,7 +44,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
 
   var openModal = function(type, txp, cb) {
     var fc = profileService.focusedClient;
-    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bwcService, bitrefill, pusher) {
+    var ModalInstanceCtrl = function($scope, $log, $timeout, $modalInstance, bwcService, bitrefill, pusher, txFormatService) {
       $scope.type = type;
       $scope.tx = txFormatService.processTx(txp);
       $scope.color = fc.backgroundColor;
@@ -72,6 +72,10 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
+
+      $rootScope.$on('Local/PusherUnsubscribe', function() {
+        pusher.unsubscribe(orderId, paymentAddress);
+      });
       if (cb) $timeout(cb, 100);
     };
     var modalInstance = $modal.open({
@@ -84,7 +88,7 @@ angular.module('copayAddon.bitrefill').factory('refillStatus',
       if (isCordova && !StatusBar.isVisible) {
         StatusBar.show();
       }
-      pusher.unsubscribe(txp.customData.bitrefillOrderId, txp.toAddress);
+      $rootScope.$emit('Local/PusherUnsubscribe');
       var m = angular.element(document.getElementsByClassName('reveal-modal'));
       m.addClass('hideModal');
     });
