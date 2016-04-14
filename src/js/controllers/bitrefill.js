@@ -149,7 +149,7 @@ angular.module('copayAddon.bitrefill').controller('bitrefillController',
     };
 
     $scope.updateBtcValue = function(value, valueSat) {
-      if (!value) {
+      if (!value || (!valueSat && !$scope.selectedOp.range)) {
           $scope.btcValueStr = null;
           return;
       }
